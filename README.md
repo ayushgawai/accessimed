@@ -90,6 +90,12 @@ The backend is intentionally small and service-oriented.
 
 ### 1. Install dependencies
 
+You have two clean ways to use the CLI.
+
+#### Option A: Use the backend virtual environment
+
+Best for development inside this repo.
+
 ```bash
 cd backend
 python3 -m venv .venv
@@ -98,10 +104,33 @@ pip install -e ".[dev]"
 playwright install chromium
 ```
 
+After that, the CLI works while the virtual environment is active:
+
+```bash
+accessimed code test ../demo-site
+```
+
+#### Option B: Install the CLI into your current Python environment
+
+Best if you want `accessimed` available directly from your normal shell.
+
+From the repo root:
+
+```bash
+python3 -m pip install -e ./backend
+playwright install chromium
+```
+
+Then you can run:
+
+```bash
+accessimed code test demo-site
+```
+
 ### 2. Configure environment variables
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
 Supported provider settings:
@@ -113,9 +142,16 @@ Supported provider settings:
 
 If no provider key is configured, AccessiMed falls back to deterministic remediation rules for the main demo issue types.
 
+Important:
+
+- the backend reads `.env` from the `backend/` directory
+- for local development, put your keys in `backend/.env`
+
 ### 3. Start the backend
 
 ```bash
+cd backend
+source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -179,10 +215,18 @@ The CLI is the developer path.
 
 ### Scan a local codebase
 
+If you are using the backend virtual environment:
+
 ```bash
 cd backend
 source .venv/bin/activate
 accessimed code test ../demo-site
+```
+
+If you installed the package from the repo root into your current environment:
+
+```bash
+accessimed code test demo-site
 ```
 
 JSON output:
@@ -201,8 +245,16 @@ That exit code makes it useful in CI checks, which is one of the key reasons thi
 
 ### Generate and apply fixes locally
 
+From inside `backend/.venv`:
+
 ```bash
 accessimed code fix ../demo-site --apply
+```
+
+Or from the repo root if installed into your current environment:
+
+```bash
+accessimed code fix demo-site --apply
 ```
 
 Current auto-apply behavior is intentionally conservative:
@@ -233,6 +285,27 @@ Use the included [demo-site/README.md](/Users/spartan/Documents/GitHub/AccessiMe
 
 This is a much stronger story than promising blind repo automation.
 
+## If `accessimed` says command not found
+
+That means the CLI is not installed in the shell you are using.
+
+Fix it with one of these:
+
+### Fastest fix inside this repo
+
+```bash
+cd backend
+source .venv/bin/activate
+accessimed code test ../demo-site
+```
+
+### Install into your current shell environment
+
+```bash
+python3 -m pip install -e ./backend
+accessimed code test demo-site
+```
+
 ## Verification
 
 Artifacts:
@@ -240,6 +313,7 @@ Artifacts:
 - [docs/testing-summary.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/testing-summary.md)
 - [docs/demo-validation.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/demo-validation.md)
 - [docs/ayush-backend-guide.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/ayush-backend-guide.md)
+- [docs/complete-demo-guide.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/complete-demo-guide.md)
 
 Most recent automated result:
 
