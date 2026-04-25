@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-5"
     demo_site_root: Path = Field(default=Path("../demo-site"))
+    allowed_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ]
+    )
 
     def ensure_runtime_dirs(self) -> None:
         self.report_dir.mkdir(parents=True, exist_ok=True)

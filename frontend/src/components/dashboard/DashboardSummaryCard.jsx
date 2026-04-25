@@ -5,9 +5,9 @@ function DashboardSummaryCard({ label, value, tone = 'default' }) {
   const toneClasses = {
     default: 'text-textPrimary',
     critical: 'text-danger',
-    serious: 'text-deep',
-    moderate: 'text-secondary',
-    minor: 'text-textSecondary',
+    high: 'text-warning',
+    medium: 'text-secondary',
+    low: 'text-success',
   }
 
   return (
@@ -21,7 +21,7 @@ function DashboardSummaryCard({ label, value, tone = 'default' }) {
 DashboardSummaryCard.propTypes = {
   label: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  tone: PropTypes.oneOf(['default', 'critical', 'serious', 'moderate', 'minor']),
+  tone: PropTypes.oneOf(['default', 'critical', 'high', 'medium', 'low']),
 }
 
 export default DashboardSummaryCard

@@ -132,9 +132,9 @@ function ScanPage() {
   const getLevelCount = (rowKey) => {
     if (!result?.severity_counts) return 0
     if (rowKey === 'critical') return result.severity_counts.critical ?? 0
-    if (rowKey === 'high') return result.severity_counts.serious ?? 0
-    if (rowKey === 'medium') return result.severity_counts.moderate ?? 0
-    return result.severity_counts.minor ?? 0
+    if (rowKey === 'high') return result.severity_counts.high ?? 0
+    if (rowKey === 'medium') return result.severity_counts.medium ?? 0
+    return result.severity_counts.low ?? 0
   }
 
   return (
@@ -350,7 +350,7 @@ function ScanPage() {
             ['Intake', 'Validate URL and initialize scan context'],
             ['Discovery', 'Identify key pages and navigation paths'],
             ['Audit', 'Evaluate page content for WCAG issues'],
-            ['Prioritization', 'Classify findings by impact and risk'],
+            ['Prioritization', 'Classify findings by severity and score'],
             ['Output', 'Prepare dashboard and report outputs'],
           ].map(([title, caption], idx) => (
             <div key={title} className="relative">
@@ -364,7 +364,7 @@ function ScanPage() {
       <Section eyebrow="What you'll get" title="Everything needed to move from findings to implementation" className="rounded-3xl bg-light/70 pt-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            ['▣', 'Severity-grouped violations', 'Clear prioritization for critical and serious accessibility risks.'],
+            ['▣', 'Severity-grouped violations', 'Clear prioritization for critical and high-risk accessibility issues.'],
             ['✦', 'AI fix previews', 'Before/after remediation suggestions with implementation context.'],
             ['⬚', 'PDF report', 'Exportable compliance summary for stakeholders and documentation.'],
             ['⇄', 'AI Ready workflow', 'Natural handoff into developer review and merge flow.'],

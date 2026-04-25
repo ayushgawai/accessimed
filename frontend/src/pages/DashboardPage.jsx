@@ -7,9 +7,10 @@ import ViolationCard from '../components/dashboard/ViolationCard'
 import UtilityPanel from '../components/dashboard/UtilityPanel'
 import ViolationDetailsModal from '../components/dashboard/ViolationDetailsModal'
 import EmptyState from '../components/dashboard/EmptyState'
-import { getReportBlob } from '../services/scanService'
+import FixModal from '../components/dashboard/FixModal'
+import { getReportBlob, getSingleFix } from '../services/scanService'
 
-const allSeverities = ['critical', 'serious', 'moderate', 'minor']
+const allSeverities = ['critical', 'high', 'medium', 'low']
 
 function formatScanTime(value) {
   const date = new Date(value)
@@ -25,6 +26,9 @@ function DashboardPage() {
   const [search, setSearch] = useState('')
   const [unresolvedOnly, setUnresolvedOnly] = useState(false)
   const [detailsViolation, setDetailsViolation] = useState(null)
+  const [fixViolation, setFixViolation] = useState(null)
+  const [fixLoading, setFixLoading] = useState(false)
+  const [fixResult, setFixResult] = useState(null)
   const [notice, setNotice] = useState('')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
@@ -35,16 +39,21 @@ function DashboardPage() {
       const parsed = JSON.parse(raw)
       const violations = Array.isArray(parsed.violations) ? parsed.violations : []
       const mapped = violations.map((v, idx) => ({
-        id: v.id || `${v.violation_id || 'rule'}-${idx}`,
-        impact: (v.impact || 'minor').toLowerCase(),
-        ruleId: v.violation_id || 'wcag-rule',
-        title: v.description || 'Accessibility issue detected',
+        id: String(v.id || `${v.ruleId || 'rule'}-${idx}`),
+        violationId: v.violationId || v.id,
+        severity: (v.severity || 'low').toLowerCase(),
+        severityLabel: v.severityLabel || v.severity || 'Low',
+        severityScore: v.severityScore ?? 0,
+        impact: (v.impact || '').toLowerCase(),
+        ruleId: v.ruleId || 'wcag-rule',
+        title: v.title || v.description || 'Accessibility issue detected',
         description: v.description || 'Accessibility issue detected',
-        pageUrl: v.page_url || parsed.siteUrl || 'Unknown page',
+        pageUrl: v.pageUrl || parsed.siteUrl || parsed.site_url || 'Unknown page',
         target: Array.isArray(v.target) ? v.target.join(', ') : v.target || 'unknown-selector',
-        snippet: v.html || '<div>Issue source unavailable</div>',
+        snippet: v.snippet || v.html || '<div>Issue source unavailable</div>',
         whyItMatters: 'This issue impacts assistive technology support and clinical usability.',
-        helpText: v.help || 'Refer to WCAG guidance for remediation details.',
+        helpText: v.helpText || 'Refer to WCAG guidance for remediation details.',
+        helpUrl: v.helpUrl || '',
         resolved: false,
         category: 'general',
       }))
@@ -70,21 +79,21 @@ function DashboardPage() {
   }, [dashboardData])
 
   const summary = useMemo(() => {
-    if (!dashboardData) return { total: 0, critical: 0, serious: 0, moderate: 0, minor: 0 }
+    if (!dashboardData) return { total: 0, critical: 0, high: 0, medium: 0, low: 0 }
     return dashboardData.violations.reduce(
       (acc, violation) => {
         acc.total += 1
-        acc[violation.impact] = (acc[violation.impact] || 0) + 1
+        acc[violation.severity] = (acc[violation.severity] || 0) + 1
         return acc
       },
-      { total: 0, critical: 0, serious: 0, moderate: 0, minor: 0 },
+      { total: 0, critical: 0, high: 0, medium: 0, low: 0 },
     )
   }, [dashboardData])
 
   const filteredViolations = useMemo(() => {
     if (!dashboardData) return []
     return dashboardData.violations.filter((violation) => {
-      const matchesSeverity = selectedSeverities.includes(violation.impact)
+      const matchesSeverity = selectedSeverities.includes(violation.severity)
       const matchesPage = selectedPage === 'all' || violation.pageUrl === selectedPage
       const matchesSearch = `${violation.title} ${violation.ruleId} ${violation.target}`
         .toLowerCase()
@@ -138,9 +147,38 @@ function DashboardPage() {
     }
   }
 
+  const handleCopyFix = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setNotice('Generated fix copied to clipboard.')
+    } catch (_err) {
+      setNotice('Unable to copy fix in this browser.')
+    }
+  }
+
+  const handleGenerateFix = async (violation, forceRegenerate = false) => {
+    setFixViolation(violation)
+    setFixLoading(true)
+    if (!forceRegenerate && violation.fixes?.length) {
+      setFixResult(violation.fixes[violation.fixes.length - 1])
+      setFixLoading(false)
+      return
+    }
+
+    try {
+      const response = await getSingleFix(violation.violationId)
+      setFixResult(response.fix)
+    } catch (_err) {
+      setFixResult(null)
+      setNotice('Unable to generate fix preview right now.')
+    } finally {
+      setFixLoading(false)
+    }
+  }
+
   const complianceScore = Math.max(
     0,
-    100 - summary.critical * 10 - summary.serious * 6 - summary.moderate * 3 - summary.minor,
+    100 - summary.critical * 10 - summary.high * 6 - summary.medium * 3 - summary.low,
   )
 
   if (!dashboardData) {
@@ -187,9 +225,9 @@ function DashboardPage() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             ['Critical', summary.critical, 'critical', 'bg-red-600'],
-            ['Serious', summary.serious, 'serious', 'bg-orange-500'],
-            ['Moderate', summary.moderate, 'moderate', 'bg-blue-500'],
-            ['Minor', summary.minor, 'minor', 'bg-emerald-600'],
+            ['High', summary.high, 'high', 'bg-orange-500'],
+            ['Medium', summary.medium, 'medium', 'bg-blue-500'],
+            ['Low', summary.low, 'low', 'bg-emerald-600'],
           ].map(([label, value, tone, dotClass]) => (
             <div key={label} className="rounded-2xl border border-secondary/25 bg-light/85 p-4 shadow-panel">
               <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-textSecondary">
@@ -199,11 +237,11 @@ function DashboardPage() {
               <p className={`mt-2 font-display text-4xl font-semibold ${
                 tone === 'critical'
                   ? 'text-danger'
-                  : tone === 'serious'
-                    ? 'text-deep'
-                    : tone === 'moderate'
+                  : tone === 'high'
+                    ? 'text-warning'
+                    : tone === 'medium'
                       ? 'text-secondary'
-                      : 'text-deepSoft'
+                      : 'text-success'
               }`}>{value}</p>
             </div>
           ))}
@@ -263,6 +301,7 @@ function DashboardPage() {
                   violation={violation}
                   onViewDetails={setDetailsViolation}
                   onCopySelector={handleCopySelector}
+                  onGenerateFix={handleGenerateFix}
                 />
               ))
             )}
@@ -276,6 +315,18 @@ function DashboardPage() {
       </Section>
 
       <ViolationDetailsModal violation={detailsViolation} onClose={() => setDetailsViolation(null)} />
+      <FixModal
+        violation={fixViolation}
+        fix={fixResult}
+        loading={fixLoading}
+        onClose={() => {
+          setFixViolation(null)
+          setFixResult(null)
+          setFixLoading(false)
+        }}
+        onRegenerate={() => fixViolation && handleGenerateFix(fixViolation, true)}
+        onCopy={handleCopyFix}
+      />
     </div>
   )
 }

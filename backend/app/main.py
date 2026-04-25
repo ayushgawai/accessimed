@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import Settings, get_settings
@@ -29,6 +30,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url=f"{app_settings.api_prefix}/openapi.json",
         docs_url=f"{app_settings.api_prefix}/docs",
         redoc_url=f"{app_settings.api_prefix}/redoc",
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=app_settings.allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.include_router(router, prefix=app_settings.api_prefix)
     return app

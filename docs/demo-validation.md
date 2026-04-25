@@ -1,98 +1,99 @@
 # Demo Validation
 
-## Demo assets used
+## Demo surfaces used
 
-### API demo site
+### Public website demo
 
-The local website used for backend API validation is:
+Recommended live-scan targets are listed here:
 
-- [backend/tests/fixtures/site/index.html](/Users/spartan/Documents/GitHub/AccessiMed/backend/tests/fixtures/site/index.html)
-- [backend/tests/fixtures/site/forms.html](/Users/spartan/Documents/GitHub/AccessiMed/backend/tests/fixtures/site/forms.html)
+- [docs/live-demo-sites.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/live-demo-sites.md)
 
-### Developer workflow demo site
+### Local code demo
 
-The local codebase used for CLI validation is:
+The developer workflow demo codebase is:
 
 - [demo-site/index.html](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/index.html)
 - [demo-site/appointments.html](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/appointments.html)
 - [demo-site/portal.html](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/portal.html)
 
-## Backend API demo commands
+## Validated demo paths
 
-### Start backend
+## 1. Frontend scan flow
 
-```bash
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --port 8000
-```
+Validated through the integrated frontend/backend contract:
 
-### Serve local API demo site
+- website URL input
+- scan submission
+- dashboard-ready result shape
+- report download path
+- single-fix preview path
 
-```bash
-python3 -m http.server 8765 --directory backend/tests/fixtures/site
-```
+## 2. Backend scan flow
 
-### Run a scan
+Validated endpoints:
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/scans \
-  -H 'Content-Type: application/json' \
-  -d '{"url":"http://127.0.0.1:8765/index.html"}'
-```
+- `GET /api/v1/health`
+- `POST /api/v1/scans`
+- `GET /api/v1/scans/{scan_id}/report`
+- `POST /api/v1/fixes/single`
 
-### Generate one remediation
+## 3. Developer workflow
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/fixes/single \
-  -H 'Content-Type: application/json' \
-  -d '{"violation_id":1}'
-```
-
-### Generate all remediations
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/fixes/bulk \
-  -H 'Content-Type: application/json' \
-  -d '{"scan_id":"<scan-id>"}'
-```
-
-## Developer workflow demo commands
+Validated commands:
 
 ```bash
 cd backend
 source .venv/bin/activate
 accessimed code test ../demo-site
-accessimed code fix ../demo-site --apply
+accessimed code fix /tmp/accessimed-one-fix --finding 7 --apply
 ```
 
-Recommended public demo sites are listed in:
+That proves:
 
-- [docs/live-demo-sites.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/live-demo-sites.md)
+- local code findings can be surfaced in CLI
+- a single finding can be selected
+- one exact file change can be written
+- the result is reviewable as a normal Git diff
 
-## What the demo proves
+## 4. Local code API workflow
 
-- backend starts cleanly
-- live crawl and audit work
-- real findings are returned
-- PDF report generation works
-- remediation generation works without provider keys
-- severity scoring is visible
-- local CLI workflow works for developers
-- controlled local code updates are possible on a static demo site
+Validated endpoints:
 
-## What the demo does not prove yet
+- `POST /api/v1/local/code/scan`
+- `POST /api/v1/local/code/apply`
 
-- Anthropic output quality on your real key
-- OpenAI output quality on your real key
-- remediation against a large production healthcare codebase
-- framework-aware source patching for arbitrary app architectures
+That gives you a future frontend integration path if you want a richer “accept fix” experience later.
 
-## About code updates
+## Latest verified numbers
 
-AccessiMed currently supports two update surfaces:
+### Local backend smoke
 
-1. remediation snippets returned by the backend fix endpoints
-2. local code remediation through the CLI for exact-match static HTML updates
+- pages scanned: `3`
+- violations found: `9`
 
-It does **not** blindly patch arbitrary third-party website source code from scraped DOM alone. That would be unsafe and hard to defend technically.
+### CLI demo-site scan
+
+- findings found: `12`
+
+### Public site smoke
+
+- site: `https://healthy.kaiserpermanente.org/front-door`
+- pages scanned: `5`
+- violations found: `23`
+
+## What the demo proves well
+
+- AccessiMed can scan live healthcare websites
+- findings are severity-scored
+- PDF reports are downloadable
+- remediation suggestions are available
+- developers can run a CLI workflow locally
+- developers can apply one concrete fix and review the diff
+
+## What remains intentionally narrow
+
+- local auto-apply is conservative and exact-match based
+- it is strongest on static HTML
+- it does not claim arbitrary framework-aware source patching yet
+
+That boundary is still acceptable for the current product story because the main goal is to demonstrate a complete, believable workflow from scan to remediation review.

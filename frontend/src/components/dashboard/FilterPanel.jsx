@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import GlassPanel from '../ui/GlassPanel'
 
-const levels = ['critical', 'serious', 'moderate', 'minor']
+const levels = ['critical', 'high', 'medium', 'low']
 
 function FilterPanel({
   search,

@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import Section from '../components/ui/Section'
 import GlassPanel from '../components/ui/GlassPanel'
 import PillBadge from '../components/ui/PillBadge'
@@ -16,10 +15,10 @@ const stats = [
 
 const featureCards = [
   ['◈', 'Multi-page scanning', 'Evaluate key healthcare pages quickly with a focused crawl strategy designed for practical remediation.'],
-  ['⟁', 'Severity-grouped results', 'Prioritize what matters by sorting violations into critical, serious, moderate, and minor categories.'],
+  ['⟁', 'Severity-grouped results', 'Prioritize what matters by sorting violations into critical, high, medium, and low categories.'],
   ['✦', 'AI single-fix remediation', 'Generate targeted, explainable HTML fixes for specific WCAG issues with minimal engineering friction.'],
   ['▦', 'PDF compliance reports', 'Export clear, shareable reports for compliance, legal, and delivery stakeholders.'],
-  ['⇄', 'GitHub PR workflow', 'Move from findings to developer review in one flow by opening pull requests with remediation notes.'],
+  ['⇄', 'Developer workflow handoff', 'Move from findings into local code review with CLI-friendly remediation guidance and exact file changes.'],
   ['✓', 'Healthcare-ready trust posture', 'Built for high-accountability teams that require precision, traceability, and reviewability.'],
 ]
 
@@ -28,7 +27,7 @@ const faqItems = [
   { q: 'How long does a scan take?', a: 'Most scans complete in under a minute for standard 5-page coverage, depending on website response time.' },
   { q: 'What types of issues are detected?', a: 'It detects common accessibility risks including contrast, labels, semantics, alt text, and interactive control problems.' },
   { q: 'Can users review fixes before applying them?', a: 'Yes. AccessiMed provides before/after code plus explanation so teams can validate changes before merging.' },
-  { q: 'Does it work with GitHub?', a: 'Yes. Teams can create remediation pull requests directly and keep everything in normal developer workflows.' },
+  { q: 'How do developers apply changes?', a: 'Developers can use the CLI on a local codebase, apply a single finding, and review the resulting Git diff before keeping or discarding it.' },
   { q: 'Is the interface itself accessibility-friendly?', a: 'Yes. The product UI uses semantic structure, strong contrast, keyboard support, and visible focus states.' },
 ]
 
@@ -52,7 +51,7 @@ function AboutPage() {
               <Button to="/dashboard" variant="secondary">Explore Dashboard</Button>
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
-              {['AI Fixes', 'Severity-Based Results', 'PDF Reports', 'GitHub PR Workflow'].map((pill) => (
+              {['AI Fixes', 'Severity-Based Results', 'PDF Reports', 'Developer CLI Workflow'].map((pill) => (
                 <PillBadge key={pill}>{pill}</PillBadge>
               ))}
             </div>
@@ -144,9 +143,9 @@ function AboutPage() {
             ['Enter URL', 'Provide your healthcare website URL'],
             ['Crawl Pages', 'Discover and load key internal pages'],
             ['Run WCAG Audit', 'Detect rule-level accessibility violations'],
-            ['Group by Severity', 'Prioritize critical and serious issues'],
+            ['Group by Severity', 'Prioritize critical and high-risk issues'],
             ['Generate AI Fix', 'Produce before/after remediation code'],
-            ['Report or PR', 'Download PDF report or open GitHub PR'],
+            ['Report or CLI handoff', 'Download PDF output or move into local code remediation'],
           ].map(([title, caption], idx) => (
             <div key={title} className="relative">
               <DiagramNode title={title} caption={caption} />
@@ -163,7 +162,7 @@ function AboutPage() {
             ['Backend API', 'FastAPI routes coordinate scan and remediation actions'],
             ['Scanner Layer', 'Playwright crawl plus axe-core accessibility analysis'],
             ['AI Fix Layer', 'Model-assisted remediation and explanation generation'],
-            ['Outputs', 'PDF reporting and GitHub PR creation for developer teams'],
+            ['Outputs', 'PDF reporting plus local developer workflow actions'],
           ].map(([title, text]) => (
             <GlassPanel key={title} className="p-4">
               <p className="text-sm font-semibold text-textPrimary">{title}</p>
@@ -186,7 +185,7 @@ function AboutPage() {
           {[
             ['Healthcare organizations', 'Build confidence before compliance reviews and patient-facing launches.'],
             ['Frontend teams', 'Translate accessibility findings into reviewable code changes faster.'],
-            ['Engineering leads', 'Prioritize risk and route fixes through existing PR workflows.'],
+            ['Engineering leads', 'Prioritize risk and route fixes into existing Git review workflows.'],
             ['Compliance stakeholders', 'Maintain traceable evidence with reports and documented remediation.'],
           ].map(([role, copy]) => (
             <GlassPanel key={role} className="p-5">

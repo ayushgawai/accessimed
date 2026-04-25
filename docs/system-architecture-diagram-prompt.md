@@ -1,71 +1,121 @@
-# Prompt For Claude Or Gemini
+# System Architecture Diagram Prompt
 
 Create a clean enterprise-style system architecture diagram for a project named **AccessiMed**.
 
-The diagram should be presentation-ready for a hackathon judging panel and should look polished, modern, and easy to understand in under 10 seconds. Use a white background, teal and slate accents, clean arrows, subtle shadows, and readable labels. Avoid cartoon styling.
+The audience is a hackathon judging panel. The result should be presentation-ready, modern, and easy to understand quickly. Use a light background, teal and slate accents, clean arrows, subtle shadows, and readable labels. Avoid poster clutter and avoid cartoon styling.
 
-Show these layers from top to bottom:
+Render the output as **one polished slide-style architecture diagram**.
 
-1. **Frontend (React / Vite)**
-   Include:
-   - Scan Form
-   - Results Dashboard
-   - Single Fix Modal
-   - Severity Summary
+## Main layers to show
 
-2. **Backend API (FastAPI)**
-   Include:
-   - `POST /api/v1/scans`
-   - `GET /api/v1/scans/{scan_id}`
-   - `GET /api/v1/scans/{scan_id}/report`
-   - `POST /api/v1/fixes/single`
-   - `POST /api/v1/fixes/bulk`
+### 1. Frontend layer
 
-3. **Workflow / Service Layer**
-   Show:
-   - Crawler Service
-   - Auditor Service
-   - Reporter Service
-   - Fix Service
-   - Local Code Service
-   - CLI Entry Point
+Label this section:
 
-   Show the primary scan path as:
-   `URL input -> crawl pages -> audit pages -> persist results -> generate PDF report`
+`React / Vite Frontend`
 
-   Show the remediation path as:
-   `selected violation -> generate fix -> store fix -> expose remediation output`
+Include these UI surfaces:
 
-   Show a separate developer workflow path as:
-   `local codebase -> CLI scan -> severity-scored findings -> optional local fix apply`
+- About / landing page
+- Scan page
+- Dashboard page
+- AI fix preview modal
 
-4. **Persistence Layer**
-   Show SQLite with three tables:
-   - scans
-   - violations
-   - fixes
+Optional caption:
 
-   Visually emphasize lineage:
-   `scan -> violations -> fixes`
+`User-facing workflow for scans, review, reports, and remediation previews`
 
-5. **External Integrations**
-   Include:
-   - Playwright
-   - axe-core
-   - Anthropic Claude API
-   - OpenAI API
+### 2. Backend API layer
 
-Add side callouts for:
-- Async FastAPI architecture
+Label this section:
+
+`FastAPI Backend`
+
+Show these endpoints:
+
+- `GET /api/v1/health`
+- `POST /api/v1/scans`
+- `GET /api/v1/scans/{scan_id}`
+- `GET /api/v1/scans/{scan_id}/report`
+- `POST /api/v1/fixes/single`
+- `POST /api/v1/fixes/bulk`
+- `POST /api/v1/local/code/scan`
+- `POST /api/v1/local/code/apply`
+
+### 3. Service layer
+
+Label this section:
+
+`Application Services`
+
+Include:
+
+- Crawler Service
+- Auditor Service
+- Scan Service
+- Reporter Service
+- Fix Service
+- Local Code Service
+- LLM Service
+- CLI Entry Point
+
+Show the main scan path:
+
+`URL input -> crawl pages -> audit pages -> persist findings -> generate PDF report`
+
+Show the fix path:
+
+`selected violation -> generate remediation -> store fix -> expose preview`
+
+Show the developer path:
+
+`local codebase -> CLI scan -> finding selection -> exact-match file apply`
+
+### 4. Persistence layer
+
+Label this section:
+
+`SQLite Persistence`
+
+Show three tables:
+
+- `scans`
+- `violations`
+- `fixes`
+
+Emphasize lineage:
+
+`scan -> violations -> fixes`
+
+### 5. External integrations
+
+Label this section:
+
+`External Tools and Providers`
+
+Include:
+
+- Playwright
+- axe-core
+- OpenAI API
+- Anthropic API
+
+## Side callouts
+
+Add small, tasteful callouts for:
+
 - WCAG 2.1 AA focus
-- Heuristic fallback for demo reliability
+- Severity scoring model
+- OpenAI-first with Anthropic fallback
+- PDF reporting
 - Snyk-style CLI workflow for developers
 - Migration path from SQLite to PostgreSQL
 
-The final image should feel like a serious enterprise AI system diagram suitable for judges scoring:
-- technical architecture
-- scalability and performance
-- data governance
-- functionality and demo readiness
+## Style constraints
 
-Render the output as a single slide-style architecture diagram, not a poster, not a UI mockup, and not a flowchart with excessive text.
+- Keep the diagram clean and not overcrowded
+- Use clear directional arrows
+- Prefer grouped layers over scattered icons
+- Make the frontend and CLI both visible
+- Keep text short enough to be readable on one slide
+- Make it feel like a serious technical architecture diagram, not a UI mockup

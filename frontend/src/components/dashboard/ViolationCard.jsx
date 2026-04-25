@@ -3,22 +3,25 @@ import SeverityBadge from './SeverityBadge'
 
 const accentMap = {
   critical: 'border-l-danger',
-  serious: 'border-l-warning',
-  moderate: 'border-l-secondary',
-  minor: 'border-l-success',
+  high: 'border-l-warning',
+  medium: 'border-l-secondary',
+  low: 'border-l-success',
 }
 
-function ViolationCard({ violation, onViewDetails, onCopySelector }) {
+function ViolationCard({ violation, onViewDetails, onCopySelector, onGenerateFix }) {
   return (
-    <article className={`rounded-xl border border-secondary/20 bg-bg/55 p-4 shadow-panel transition hover:-translate-y-0.5 ${accentMap[violation.impact] || accentMap.minor} border-l-4`}>
+    <article className={`rounded-xl border border-secondary/20 bg-bg/55 p-4 shadow-panel transition hover:-translate-y-0.5 ${accentMap[violation.severity] || accentMap.low} border-l-4`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <SeverityBadge severity={violation.impact} />
+          <SeverityBadge severity={violation.severity} />
           <span className="font-mono text-xs text-textSecondary">{violation.ruleId}</span>
         </div>
         <div className="flex gap-2">
           <button type="button" className="rounded-md border border-secondary/25 px-2 py-1 text-xs text-textSecondary hover:text-textPrimary" onClick={() => onViewDetails(violation)}>
             View Details
+          </button>
+          <button type="button" className="rounded-md border border-secondary/25 px-2 py-1 text-xs text-textSecondary hover:text-textPrimary" onClick={() => onGenerateFix(violation)}>
+            AI Fix Preview
           </button>
           <button type="button" className="rounded-md border border-secondary/25 px-2 py-1 text-xs text-textSecondary hover:text-textPrimary" onClick={() => onCopySelector(violation.target)}>
             Copy Selector
@@ -39,7 +42,7 @@ function ViolationCard({ violation, onViewDetails, onCopySelector }) {
 ViolationCard.propTypes = {
   violation: PropTypes.shape({
     id: PropTypes.string.isRequired,
-    impact: PropTypes.string.isRequired,
+    severity: PropTypes.string.isRequired,
     ruleId: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
@@ -49,6 +52,7 @@ ViolationCard.propTypes = {
   }).isRequired,
   onViewDetails: PropTypes.func.isRequired,
   onCopySelector: PropTypes.func.isRequired,
+  onGenerateFix: PropTypes.func.isRequired,
 }
 
 export default ViolationCard

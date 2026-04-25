@@ -10,8 +10,11 @@ function ViolationDetailsModal({ violation, onClose }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <SeverityBadge severity={violation.impact} />
+              <SeverityBadge severity={violation.severity} />
               <span className="font-mono text-xs text-textSecondary">{violation.ruleId}</span>
+              <span className="rounded-full border border-secondary/20 px-2 py-0.5 text-xs text-textSecondary">
+                Score {violation.severityScore}
+              </span>
             </div>
             <h2 className="mt-2 font-display text-2xl font-bold text-textPrimary">{violation.title}</h2>
           </div>
@@ -36,6 +39,16 @@ function ViolationDetailsModal({ violation, onClose }) {
           <p className="mt-2 font-mono text-xs text-textPrimary">{violation.target}</p>
           <p className="mt-1 text-xs text-textSecondary">{violation.pageUrl}</p>
           <p className="mt-3 text-sm text-textSecondary">{violation.helpText}</p>
+          {violation.helpUrl && (
+            <a
+              href={violation.helpUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex text-sm font-medium text-primary underline decoration-primary/40 underline-offset-4"
+            >
+              Open rule guidance
+            </a>
+          )}
         </div>
       </div>
     </div>
@@ -44,7 +57,8 @@ function ViolationDetailsModal({ violation, onClose }) {
 
 ViolationDetailsModal.propTypes = {
   violation: PropTypes.shape({
-    impact: PropTypes.string,
+    severity: PropTypes.string,
+    severityScore: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     ruleId: PropTypes.string,
     title: PropTypes.string,
     description: PropTypes.string,
@@ -52,6 +66,7 @@ ViolationDetailsModal.propTypes = {
     target: PropTypes.string,
     pageUrl: PropTypes.string,
     helpText: PropTypes.string,
+    helpUrl: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
 }

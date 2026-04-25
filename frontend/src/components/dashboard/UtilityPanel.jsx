@@ -34,7 +34,7 @@ function UtilityPanel({ metadata, onDownloadReport }) {
       <GlassPanel className="p-4">
         <h3 className="text-sm font-semibold text-textPrimary">Compliance notes</h3>
         <p className="mt-2 text-xs text-textSecondary">
-          Focus on unresolved critical and serious issues first, then rerun scan before report export.
+          Focus on unresolved critical and high issues first, then rerun the scan before report export.
         </p>
       </GlassPanel>
     </div>

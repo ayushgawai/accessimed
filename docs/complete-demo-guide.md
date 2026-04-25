@@ -1,104 +1,46 @@
 # Complete Demo Guide
 
-## What AccessiMed is
+This is the clean walkthrough to use during a live demo. It covers:
 
-AccessiMed has two demo surfaces:
+- frontend
+- backend
+- public website scan
+- PDF report
+- AI fix preview
+- CLI developer workflow
+- single-finding local apply
 
-1. `Website scan workflow`
-   Scan a live healthcare website, find accessibility issues, score them by severity, and generate a report plus remediation suggestions.
-2. `Developer CLI workflow`
-   Run a CLI on a local medical website codebase, surface issues in terminal output, and apply safe fixes for controlled static HTML cases.
+## One-sentence product story
 
-This is why the Snyk comparison works:
+AccessiMed helps healthcare teams audit live websites for WCAG issues and helps developers move those findings into reviewable code fixes through a Snyk-style workflow.
 
-- Snyk scans and surfaces issues in the developer workflow
-- AccessiMed does that for accessibility, while also scanning deployed websites
+## Before the demo
 
-## Very important CLI note
-
-If you see:
-
-```bash
-zsh: command not found: accessimed
-```
-
-that means the CLI is not installed in your current shell.
-
-Use one of these two setups.
-
-### Setup option A: backend virtual environment
+### Backend
 
 ```bash
-cd backend
-python3 -m venv .venv
+cd /Users/spartan/Documents/GitHub/AccessiMed/backend
 source .venv/bin/activate
-pip install -e ".[dev]"
-playwright install chromium
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Run CLI commands from there:
+### Frontend
+
+Open a second terminal:
 
 ```bash
-accessimed code test ../demo-site
+cd /Users/spartan/Documents/GitHub/AccessiMed/frontend
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-### Setup option B: install into your current environment
+### URLs
 
-From the repo root:
+- frontend: `http://127.0.0.1:5173`
+- backend docs: `http://127.0.0.1:8000/api/v1/docs`
 
-```bash
-python3 -m pip install -e ./backend
-playwright install chromium
-```
+## Live website choices
 
-Then run:
-
-```bash
-accessimed code test demo-site
-```
-
-## Environment setup
-
-The backend reads `.env` from `backend/.env`.
-
-Create it with:
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-Add your keys there:
-
-```env
-ACCESSIMED_OPENAI_API_KEY=...
-ACCESSIMED_OPENAI_MODEL=gpt-5
-ACCESSIMED_ANTHROPIC_API_KEY=...
-ACCESSIMED_ANTHROPIC_MODEL=claude-sonnet-4-20250514
-```
-
-Provider behavior:
-
-- try OpenAI first
-- if OpenAI fails or rate-limits, use Anthropic
-- if both fail, use deterministic fallback
-
-## Demo assets
-
-### Local demo codebase
-
-Use:
-
-- [demo-site/index.html](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/index.html)
-- [demo-site/appointments.html](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/appointments.html)
-- [demo-site/portal.html](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/portal.html)
-
-### Good public healthcare websites for live scan demo
-
-See:
-
-- [docs/live-demo-sites.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/live-demo-sites.md)
-
-Best order:
+Use one of these for the public scan demo:
 
 1. `https://www.providence.org/`
 2. `https://stanfordhealthcare.org/`
@@ -106,143 +48,141 @@ Best order:
 4. `https://www.ucsfhealth.org/`
 5. `https://www.mayoclinic.org/`
 
-## Demo flow A: website scan
+Shortlist notes are here:
 
-This is the “look, we can scan a real healthcare website” part.
+- [docs/live-demo-sites.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/live-demo-sites.md)
 
-### 1. Start the backend
+## Demo flow
+
+## Part 1: product overview
+
+Start on the landing page.
+
+What to say:
+
+“AccessiMed has two surfaces. First, it scans live healthcare websites and produces severity-scored findings, AI remediation previews, and PDF reports. Second, it gives developers a workflow to review and apply accessibility fixes inside their local codebase.”
+
+## Part 2: website scan
+
+Go to `/scan`.
+
+### Use this input
+
+Primary choice:
+
+`https://www.providence.org/`
+
+Safe fallback:
+
+`https://healthy.kaiserpermanente.org/front-door`
+
+Keep `Max pages` at `5`.
+
+Click `Start Scan`.
+
+### What to show
+
+- progress steps while scanning
+- total pages scanned
+- total issues
+- critical/high/medium/low breakdown
+- open dashboard
+
+What to say:
+
+“Here AccessiMed is acting like an external compliance scanner. We crawl a limited number of key pages, run accessibility analysis, and translate the results into an engineering-friendly severity model.”
+
+## Part 3: dashboard review
+
+In the dashboard:
+
+- point out the severity summary cards
+- open one finding with `View Details`
+- highlight the selector, affected page, and rule guidance
+
+Then click `AI Fix Preview` on one finding.
+
+### What to show in the fix modal
+
+- original code snippet
+- fixed code snippet
+- explanation
+- provider used
+- confidence score
+
+What to say:
+
+“Now we’re not just reporting the issue. We’re showing a reviewable remediation suggestion that a developer can copy or move into their own workflow.”
+
+## Part 4: PDF report
+
+Click `Download Report`.
+
+What to say:
+
+“Teams still need shareable evidence for compliance, delivery, or stakeholder review, so the scan can also generate a PDF report.”
+
+## Part 5: developer CLI workflow
+
+Switch to terminal and run the local code workflow on the intentionally inaccessible demo site.
+
+### Scan local code
 
 ```bash
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-```
-
-### 2. Use the frontend or curl
-
-If frontend is not ready yet, use curl:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/scans \
-  -H 'Content-Type: application/json' \
-  -d '{"url":"https://www.providence.org/"}'
-```
-
-### 3. What to show
-
-- returned scan id
-- pages scanned
-- number of violations
-- severity levels
-- one or two example findings
-
-### 4. Download the PDF report
-
-```bash
-curl -O http://127.0.0.1:8000/api/v1/scans/<scan-id>/report
-```
-
-### 5. Generate one remediation
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/fixes/single \
-  -H 'Content-Type: application/json' \
-  -d '{"violation_id":<violation-id>}'
-```
-
-### What to say
-
-“Here we’re acting like an external compliance scanner. We take a public healthcare website, find WCAG issues, assign severity, and generate a report and fix guidance.”
-
-## Demo flow B: developer CLI workflow
-
-This is the “Snyk-like developer workflow” part.
-
-### 1. Run CLI scan
-
-If using backend virtual environment:
-
-```bash
-cd backend
+cd /Users/spartan/Documents/GitHub/AccessiMed/backend
 source .venv/bin/activate
 accessimed code test ../demo-site
 ```
 
-If installed into the current environment:
-
-```bash
-accessimed code test demo-site
-```
-
 ### What to show
 
-- findings printed in terminal
-- severity levels like `Critical`, `High`, `Medium`
-- nonzero exit behavior when issues exist
+- numbered findings
+- severity icons
+- issue summaries
+- exit behavior when findings exist
 
-### 2. Run CLI apply
+What to say:
 
-Safer version on a temp copy:
+“This is the Snyk-like developer workflow. Instead of only scanning deployed websites, developers can run AccessiMed on their own codebase and get a local list of issues.”
 
-```bash
-cp -R demo-site /tmp/accessimed-demo-run
-accessimed code fix /tmp/accessimed-demo-run --apply
-```
+## Part 6: apply one exact fix
 
-Or from inside backend venv:
+Use a safe temp copy so you do not mutate the source demo folder during the presentation:
 
 ```bash
-cp -R ../demo-site /tmp/accessimed-demo-run
-accessimed code fix /tmp/accessimed-demo-run --apply
-```
-
-### 3. Show the code changes
-
-Example:
-
-```bash
-diff -u demo-site/index.html /tmp/accessimed-demo-run/index.html
-```
-
-### What to say
-
-“Now we’re acting like a developer tool. A team working on a medical website can run our CLI locally, get accessibility findings in their workflow, and apply safe fixes to controlled code.”
-
-## Best full demo sequence
-
-Use this order:
-
-1. Explain the problem
-2. Scan a real healthcare website
-3. Show findings and severity
-4. Download report
-5. Generate one fix suggestion
-6. Switch to local demo-site code
-7. Run CLI scan
-8. Run CLI fix apply
-9. Show the diff
-
-This sequence is strong because it proves both:
-
-- external website auditing
-- internal developer workflow support
-
-## Recommended commands cheat sheet
-
-### Start backend
-
-```bash
-cd backend
+rm -rf /tmp/accessimed-demo-run
+cp -R /Users/spartan/Documents/GitHub/AccessiMed/demo-site /tmp/accessimed-demo-run
+cd /Users/spartan/Documents/GitHub/AccessiMed/backend
 source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+accessimed code fix /tmp/accessimed-demo-run --finding 7 --apply
 ```
 
-### Scan public site
+Then show the resulting change:
+
+```bash
+diff -u /Users/spartan/Documents/GitHub/AccessiMed/demo-site/index.html /tmp/accessimed-demo-run/index.html
+```
+
+What to say:
+
+“This writes a real file change into the working tree. A developer can review it as a normal Git diff, then keep it or discard it. That’s the handoff point into normal engineering review.”
+
+## Optional curl backup commands
+
+If the frontend is unavailable, you can still demo the backend directly.
+
+### Run a scan
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/scans \
   -H 'Content-Type: application/json' \
-  -d '{"url":"https://www.providence.org/"}'
+  -d '{"url":"https://healthy.kaiserpermanente.org/front-door","max_pages":5}'
+```
+
+### Download a report
+
+```bash
+curl -o accessimed-report.pdf http://127.0.0.1:8000/api/v1/scans/<scan-id>/report
 ```
 
 ### Generate one fix
@@ -250,61 +190,40 @@ curl -X POST http://127.0.0.1:8000/api/v1/scans \
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/fixes/single \
   -H 'Content-Type: application/json' \
-  -d '{"violation_id":123}'
+  -d '{"violation_id":<violation-id>}'
 ```
 
-### CLI scan
+### Scan a local codebase over HTTP
 
 ```bash
-cd backend
-source .venv/bin/activate
-accessimed code test ../demo-site
+curl -X POST http://127.0.0.1:8000/api/v1/local/code/scan \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"/Users/spartan/Documents/GitHub/AccessiMed/demo-site"}'
 ```
 
-### CLI fix apply
+### Apply one local finding over HTTP
 
 ```bash
-cp -R ../demo-site /tmp/accessimed-demo-run
-accessimed code fix /tmp/accessimed-demo-run --apply
+curl -X POST http://127.0.0.1:8000/api/v1/local/code/apply \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"/tmp/accessimed-demo-run","finding_index":7}'
 ```
 
-## Honest language to use with judges
+## Best order for the live presentation
 
-Say:
+1. Land on the homepage and explain the two workflows
+2. Go to `Scan Website`
+3. Scan a public healthcare site
+4. Open the dashboard
+5. Generate one AI fix preview
+6. Download the PDF report
+7. Switch to terminal
+8. Run `accessimed code test`
+9. Apply one finding with `--finding <n> --apply`
+10. Show the diff
 
-“AccessiMed is Snyk-like in workflow, not identical in scope. We support both live website scanning and a developer CLI. A developer can run our CLI on a medical website codebase, get severity-scored accessibility findings, and receive remediation guidance directly in their workflow.”
+## Quick speaking version
 
-Do not say:
+If you need the short version:
 
-- “we automatically fix every website”
-- “we support every frontend framework deeply”
-- “we are identical to Snyk”
-
-## If something goes wrong live
-
-### If `accessimed` is not found
-
-```bash
-cd backend
-source .venv/bin/activate
-accessimed code test ../demo-site
-```
-
-### If OpenAI rate-limits
-
-No panic.
-
-Your backend is already configured to:
-
-- try OpenAI first
-- fall back to Anthropic next
-
-### If a public site blocks scanning
-
-Switch quickly to one of the working backups from:
-
-- [docs/live-demo-sites.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/live-demo-sites.md)
-
-### If you need a guaranteed working demo
-
-Use the local `demo-site/` plus the CLI workflow. That is your most reliable path.
+“AccessiMed scans live healthcare websites for WCAG issues, groups results by severity, and generates remediation guidance. Then developers can run our CLI locally, apply one fix at a time, and review the result as a normal Git diff.”

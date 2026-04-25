@@ -4,9 +4,11 @@
 
 April 25, 2026
 
-## Automated tests
+## Automated verification
 
-Command run:
+### Backend test suite
+
+Command:
 
 ```bash
 cd backend
@@ -17,131 +19,116 @@ pytest -q
 Result:
 
 ```text
-7 passed
+9 passed
 ```
 
 Covered areas:
 
 - health endpoint
-- scan endpoint end to end
+- live scan flow
 - PDF report download
 - single-fix generation
 - bulk-fix generation
-- deterministic remediation utilities
-- contrast scoring utility
-- local code scanning
-- local code fix application flow
+- local code scan flow
+- local single-finding apply flow
+- local multi-fix apply flow
+- deterministic remediation path
 
-Test files:
+Primary test files:
 
 - [backend/tests/test_api.py](/Users/spartan/Documents/GitHub/AccessiMed/backend/tests/test_api.py)
-- [backend/tests/test_services.py](/Users/spartan/Documents/GitHub/AccessiMed/backend/tests/test_services.py)
 - [backend/tests/test_local_code.py](/Users/spartan/Documents/GitHub/AccessiMed/backend/tests/test_local_code.py)
+- [backend/tests/test_services.py](/Users/spartan/Documents/GitHub/AccessiMed/backend/tests/test_services.py)
 
-## Live API smoke test
+### Frontend production build
 
-I ran the backend with `uvicorn` and exercised the API manually.
-
-Verified:
-
-- `GET /api/v1/health` returned `200`
-- `POST /api/v1/scans` completed successfully
-- findings were persisted
-- PDF report download returned `application/pdf`
-- `POST /api/v1/fixes/single` returned a remediation
-- `POST /api/v1/fixes/bulk` returned remediations for all violations
-
-Observed live website scan result:
-
-- pages scanned: `2`
-- violations found: `8`
-
-## Playwright runtime path
-
-Chromium was installed with:
+Command:
 
 ```bash
-cd backend
-source .venv/bin/activate
-playwright install chromium
+cd frontend
+npm run build
 ```
 
-The live smoke test used the browser-enabled scan path and returned real axe-core findings.
+Result:
+
+- build passed
+- compiled React/Vite app successfully
+
+## Live smoke validation
+
+## Backend API
+
+Verified manually against a running backend:
+
+- `GET /api/v1/health`
+- `POST /api/v1/scans`
+- `GET /api/v1/scans/{scan_id}/report`
+- `POST /api/v1/fixes/single`
+- `POST /api/v1/local/code/scan`
+- `POST /api/v1/local/code/apply`
+
+Observed local demo-site scan result:
+
+- pages scanned: `3`
+- violations found: `9`
+
+Observed public website result during the latest smoke check:
+
+- site: `https://healthy.kaiserpermanente.org/front-door`
+- pages scanned: `5`
+- violations found: `23`
 
 ## CLI verification
 
-I also ran the local CLI workflow against the included demo site:
+Verified commands:
 
 ```bash
 cd backend
 source .venv/bin/activate
-accessimed code test ../demo-site --json
+accessimed code test ../demo-site
+accessimed code fix /tmp/accessimed-one-fix --finding 7 --apply
 ```
 
-Observed CLI result:
+Observed behavior:
 
-- findings detected: `12`
-- severity values returned in output
-- exit code: `1` when findings exist
+- scan prints numbered findings
+- terminal severity badges render
+- exit code is `1` when findings exist
+- single-finding apply updates one real file
+- resulting change is reviewable through `git diff`
 
-That makes the CLI usable in a developer or CI workflow.
+## Provider validation
 
-## What is working now
+Current provider order:
 
-- backend API boots successfully
-- database tables are created automatically
-- live website scan workflow runs
-- crawl and audit run on a real site
-- PDF report generation works
-- deterministic remediation works
-- bulk remediation works
-- severity scoring is returned in findings
-- local CLI scan works
-- local CLI apply flow works for exact-match static HTML cases
+1. `OpenAI`
+2. `Anthropic`
+3. deterministic fallback
 
-## What is credential-dependent
+Verified:
 
-These provider-backed paths are implemented but were not executed against your personal keys because no credentials were provided:
+- OpenAI key works
+- Anthropic key works
+- live fallback path works when OpenAI rate-limits
 
-- Anthropic remediation path
-- OpenAI remediation path
+Latest observed live remediation result:
 
-## How AI works right now
+- OpenAI returned `429`
+- backend fell back to Anthropic
+- remediation returned successfully with `provider=anthropic`
 
-The remediation service has three effective modes:
+## What is confirmed working
 
-1. `Anthropic mode`
-   Used only when `ACCESSIMED_ANTHROPIC_API_KEY` is set.
-2. `OpenAI mode`
-   Used when Anthropic is unavailable and `ACCESSIMED_OPENAI_API_KEY` is set.
-3. `Deterministic fallback mode`
-   Used when no provider key is configured or an API call fails.
+- backend boots cleanly
+- frontend builds cleanly
+- frontend/backend API contract is aligned
+- live website scan flow works
+- dashboard-compatible data shape is returned
+- PDF reporting works
+- AI fix preview generation works
+- CLI developer workflow works
+- local single-finding file apply works
 
-The deterministic path covers:
+## Honest boundary
 
-- missing alt text
-- missing labels
-- empty button names
-- empty link names
-- missing `lang`
-- low contrast inline styles
-
-## Compliance scope implemented
-
-The backend audits WCAG-oriented issues through:
-
-- axe-core browser audit when available
-- heuristic fallback checks for demo reliability
-
-Current implemented rules focus on the most common issues:
-
-- image alt text
-- form labels
-- button accessible names
-- link accessible names
-- document language
-- color contrast
-
-## Honest note
-
-This is a strong hackathon backend and demo-ready implementation, but it is not a full legal compliance certification engine for every WCAG 2.1 AA criterion. It is a practical accessibility audit and remediation platform centered on the most important workflows.
+The local auto-apply flow is intentionally conservative and designed for exact-match static HTML updates. That is a good fit for the demo and for controlled code review workflows, but it is not claiming framework-aware source rewriting for arbitrary application architectures.
