@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Section from '../components/ui/Section'
 import GlassPanel from '../components/ui/GlassPanel'
 import PillBadge from '../components/ui/PillBadge'
@@ -32,6 +34,18 @@ const faqItems = [
 ]
 
 function AboutPage() {
+  const navigate = useNavigate()
+  const [heroUrl, setHeroUrl] = useState('https://clinic-network.org')
+
+  const handleHeroScan = () => {
+    const trimmed = heroUrl.trim()
+    if (!trimmed) {
+      navigate('/scan')
+      return
+    }
+    navigate(`/scan?url=${encodeURIComponent(trimmed)}`)
+  }
+
   return (
     <div>
       <Section id="about" className="site-grid pt-16">
@@ -63,14 +77,18 @@ function AboutPage() {
                 <p className="text-xs text-textSecondary">Scan Target</p>
                 <div className="mt-2 flex gap-2">
                   <input
-                    readOnly
-                    value="https://clinic-network.org"
+                    value={heroUrl}
+                    onChange={(event) => setHeroUrl(event.target.value)}
                     className="w-full rounded-lg border border-secondary/30 bg-bg/70 px-3 py-2 text-sm text-textPrimary"
-                    aria-label="Scan target preview"
+                    aria-label="Scan target"
                   />
-                  <span className="inline-flex min-h-10 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-light animate-pulseGlow">
+                  <button
+                    type="button"
+                    onClick={handleHeroScan}
+                    className="inline-flex min-h-10 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-light animate-pulseGlow"
+                  >
                     Scan
-                  </span>
+                  </button>
                 </div>
               </GlassPanel>
               <GlassPanel className="bg-bgSecondary/60 p-4">

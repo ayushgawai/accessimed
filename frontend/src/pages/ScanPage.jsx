@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import Section from '../components/ui/Section'
 import GlassPanel from '../components/ui/GlassPanel'
 import Button from '../components/ui/Button'
@@ -40,7 +41,8 @@ const riskRows = [
 
 function ScanPage() {
   const navigate = useNavigate()
-  const [url, setUrl] = useState('')
+  const [searchParams] = useSearchParams()
+  const [url, setUrl] = useState(searchParams.get('url') || '')
   const [status, setStatus] = useState('idle')
   const [stageIndex, setStageIndex] = useState(0)
   const [error, setError] = useState('')
@@ -66,6 +68,13 @@ function ScanPage() {
     }, 1300)
     return () => clearInterval(timer)
   }, [status, scanStages.length])
+
+  useEffect(() => {
+    const incomingUrl = searchParams.get('url') || ''
+    if (incomingUrl && incomingUrl !== url) {
+      setUrl(incomingUrl)
+    }
+  }, [searchParams, url])
 
   const progressPercent = Math.round(((stageIndex + 1) / scanStages.length) * 100)
 
