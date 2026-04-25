@@ -164,6 +164,10 @@ async def handle_code_fix(args: argparse.Namespace, settings: Settings) -> int:
                     print("Skipped exact-match replacements:")
                     for item in apply_result["skipped"]:
                         print(f"- {item}")
+    if args.apply:
+        if args.finding is not None:
+            return 0 if payload["apply_result"]["changed"] else 2
+        return 0 if payload["apply_result"]["patched_count"] > 0 else (1 if findings else 0)
     return 1 if findings else 0
 
 

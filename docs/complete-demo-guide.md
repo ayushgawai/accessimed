@@ -163,6 +163,13 @@ Then show the resulting change:
 diff -u /Users/spartan/Documents/GitHub/AccessiMed/demo-site/index.html /tmp/accessimed-demo-run/index.html
 ```
 
+Important note:
+
+- use a fresh temp copy each time
+- run `accessimed code test` before choosing a finding number
+- after one fix is applied, the finding numbers can change on the next scan
+- for the smoothest live demo, use finding `#7` on a fresh copy
+
 What to say:
 
 “This writes a real file change into the working tree. A developer can review it as a normal Git diff, then keep it or discard it. That’s the handoff point into normal engineering review.”

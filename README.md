@@ -202,6 +202,8 @@ That writes a single file change into the working tree, which means the develope
 git diff
 ```
 
+For demos, use a fresh temp copy before applying a finding. Finding numbers can shift after a fix is applied.
+
 ### Apply many exact-match fixes
 
 ```bash
