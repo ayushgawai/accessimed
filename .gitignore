@@ -1,0 +1,15 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+
+backend/.venv/
+backend/.pytest_cache/
+backend/**/__pycache__/
+backend/*.egg-info/
+backend/accessimed_backend.egg-info/
+backend/data/
+backend/reports/
