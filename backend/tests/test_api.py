@@ -1,4 +1,5 @@
 from pathlib import Path
+from shutil import copytree
 
 
 async def test_healthcheck(client):
@@ -41,3 +42,30 @@ async def test_single_and_bulk_fix_flow(client, site_server):
     bulk_payload = bulk_response.json()
     assert bulk_payload["scan_id"] == scan_payload["id"]
     assert len(bulk_payload["fixes"]) == scan_payload["total_violations"]
+
+
+async def test_local_code_scan_and_apply_flow(client, tmp_path: Path, demo_site_root: Path):
+    target = tmp_path / "demo-site"
+    copytree(demo_site_root, target)
+
+    scan_response = await client.post("/api/v1/local/code/scan", json={"path": str(target)})
+    assert scan_response.status_code == 200
+    scan_payload = scan_response.json()
+
+    assert scan_payload["findings_count"] >= 1
+    assert scan_payload["findings"][0]["finding_index"] == 1
+
+    button_finding = next(
+        finding for finding in scan_payload["findings"] if finding["rule_id"] == "button-name"
+    )
+    apply_response = await client.post(
+        "/api/v1/local/code/apply",
+        json={"path": str(target), "finding_index": button_finding["finding_index"]},
+    )
+    assert apply_response.status_code == 200
+    apply_payload = apply_response.json()
+
+    assert apply_payload["changed"] is True
+    assert apply_payload["fix"]["fixed_html"]
+    updated_index = (target / "index.html").read_text(encoding="utf-8")
+    assert 'aria-label="Button action"' in updated_index

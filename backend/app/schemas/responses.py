@@ -54,3 +54,40 @@ class SingleFixResponse(BaseModel):
 class BulkFixResponse(BaseModel):
     scan_id: str
     fixes: list[SingleFixResponse]
+
+
+class LocalCodeFindingResponse(BaseModel):
+    finding_index: int
+    rule_id: str
+    impact: str
+    severity: str
+    severity_score: float
+    description: str
+    help_text: str
+    help_url: str
+    html: str
+    target: str
+    page_url: str
+    source_file: str
+
+
+class LocalCodeScanResponse(BaseModel):
+    path: str
+    findings_count: int
+    findings: list[LocalCodeFindingResponse]
+
+
+class LocalCodeFixResponse(BaseModel):
+    provider: str
+    fixed_html: str
+    explanation: str
+    confidence: float
+
+
+class LocalCodeApplyResponse(BaseModel):
+    path: str
+    finding_index: int
+    changed: bool
+    source_file: str
+    skipped_reason: str | None = None
+    fix: LocalCodeFixResponse

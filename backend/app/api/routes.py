@@ -1,12 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
+from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
-from app.schemas.requests import BulkFixRequest, ScanRequest, SingleFixRequest
+from app.schemas.requests import (
+    BulkFixRequest,
+    LocalCodeApplyRequest,
+    LocalCodeScanRequest,
+    ScanRequest,
+    SingleFixRequest,
+)
 from app.schemas.responses import (
     BulkFixResponse,
     HealthResponse,
+    LocalCodeApplyResponse,
+    LocalCodeScanResponse,
     ScanResponse,
     SingleFixResponse,
 )
@@ -76,3 +85,44 @@ async def create_bulk_fix(
     session: AsyncSession = Depends(get_session),
 ) -> BulkFixResponse:
     return await services.fix_service.create_bulk_fixes(session, payload)
+
+
+@router.post("/local/code/scan", response_model=LocalCodeScanResponse)
+async def scan_local_code(
+    payload: LocalCodeScanRequest,
+    services: ServiceContainer = Depends(get_services),
+) -> LocalCodeScanResponse:
+    root = Path(payload.path).expanduser().resolve()
+    if not root.exists() or not root.is_dir():
+        raise HTTPException(status_code=400, detail="Path must be an existing directory.")
+
+    findings = services.local_code_service.scan_path(root)
+    return LocalCodeScanResponse(
+        path=str(root),
+        findings_count=len(findings),
+        findings=findings,
+    )
+
+
+@router.post("/local/code/apply", response_model=LocalCodeApplyResponse)
+async def apply_local_code_fix(
+    payload: LocalCodeApplyRequest,
+    services: ServiceContainer = Depends(get_services),
+) -> LocalCodeApplyResponse:
+    root = Path(payload.path).expanduser().resolve()
+    if not root.exists() or not root.is_dir():
+        raise HTTPException(status_code=400, detail="Path must be an existing directory.")
+
+    try:
+        result = await services.local_code_service.apply_single_finding(root, payload.finding_index)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return LocalCodeApplyResponse(
+        path=str(root),
+        finding_index=int(result["finding_index"]),
+        changed=bool(result["changed"]),
+        source_file=str(result["source_file"]),
+        skipped_reason=str(result["skipped_reason"]) if result["skipped_reason"] is not None else None,
+        fix=result["fix"],
+    )
