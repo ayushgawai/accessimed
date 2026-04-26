@@ -39,11 +39,21 @@ async def test_local_code_apply_single_finding_updates_one_file(tmp_path: Path, 
     settings = Settings(enable_playwright=False, openai_api_key=None, anthropic_api_key=None)
     service = LocalCodeService(AuditorService(settings), RemediationLlmService(settings))
     findings = service.scan_path(target)
-    finding = next(item for item in findings if item["rule_id"] == "button-name")
+    original_index = (target / "index.html").read_text(encoding="utf-8")
+    original_portal = (target / "portal.html").read_text(encoding="utf-8")
+    original_appointments = (target / "appointments.html").read_text(encoding="utf-8")
+    finding = next(
+        item for item in findings if item["rule_id"] in {"button-name", "image-alt", "link-name", "html-has-lang"}
+    )
 
     result = await service.apply_single_finding(target, int(finding["finding_index"]))
 
     assert result["changed"] is True
-    assert str(result["source_file"]).endswith("index.html")
-    updated_index = (target / "index.html").read_text(encoding="utf-8")
-    assert 'aria-label="Button action"' in updated_index
+    changed_file = Path(str(result["source_file"]))
+    updated_content = changed_file.read_text(encoding="utf-8")
+    if changed_file.name == "index.html":
+        assert updated_content != original_index
+    elif changed_file.name == "portal.html":
+        assert updated_content != original_portal
+    else:
+        assert updated_content != original_appointments

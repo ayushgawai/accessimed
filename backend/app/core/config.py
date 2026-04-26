@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-4-20250514"
     openai_api_key: str | None = None
     openai_model: str = "gpt-5"
+    remediation_provider: str = "auto"
     demo_site_root: Path = Field(default=Path("../demo-site"))
     allowed_origins: list[str] = Field(
         default_factory=lambda: [

@@ -1,94 +1,127 @@
 # AccessiMed Workflow
 
-This document explains AccessiMed in plain language.
+This is the simplest way to understand AccessiMed.
 
-## What AccessiMed is
+## The short version
 
-AccessiMed is an accessibility workflow tool for healthcare websites.
+AccessiMed helps developers find accessibility issues, understand which ones matter most, and turn them into reviewable code changes.
 
-It helps with two different but related jobs:
+The core workflow is local and CLI-first. The web app is optional.
 
-1. `Find problems on a live website`
-2. `Help developers review and apply fixes inside the codebase`
+## The main workflow: local developer loop
 
-## Workflow 1: live website scan
+### Step 1: configure the project
 
-This is the compliance and discovery side.
+A developer runs:
+
+```bash
+accessimed init
+```
+
+This creates `.accessimed.toml`, where the project can choose:
+
+- which folder to scan
+- how many pages to inspect
+- whether to use deterministic remediation only
+- whether to enable OpenAI or Anthropic-backed fix generation
+
+### Step 2: verify setup
+
+The developer runs:
+
+```bash
+accessimed doctor
+```
+
+This confirms that the local environment is ready.
+
+### Step 3: scan local code
+
+The developer runs:
+
+```bash
+accessimed code test
+```
+
+AccessiMed scans local HTML files and prints numbered findings in the terminal.
+
+### Step 4: review issues by severity
+
+Each issue is grouped as:
+
+- `Critical`
+- `High`
+- `Medium`
+- `Low`
+
+That helps the developer decide what to fix first.
+
+### Step 5: choose a remediation mode
+
+AccessiMed can work in different ways:
+
+- `local`
+  deterministic, no-LLM mode
+- `auto`
+  OpenAI first, Anthropic second
+- `openai`
+  OpenAI only
+- `anthropic`
+  Anthropic only
+
+### Step 6: apply one fix or make the change manually
+
+The developer can run:
+
+```bash
+accessimed code fix --finding 7 --apply
+```
+
+Or they can read the suggestion and make the edit themselves.
+
+### Step 7: review the result in Git
+
+The file change shows up as a normal working-tree diff.
+
+That means the final handoff stays inside the team’s usual engineering workflow.
+
+## What happens without an LLM
+
+This matters a lot for open source and production cost control.
+
+Even without API keys, AccessiMed can still:
+
+- detect accessibility issues
+- score them by severity
+- suggest deterministic fixes for common cases
+- apply supported conservative fixes in local files
+
+So the tool is useful before any LLM provider is configured.
+
+## The optional workflow: live website scan
+
+The companion web app and API still support a second workflow.
 
 ### Step 1
 
-A user enters a public healthcare website URL.
+A user enters a public website URL.
 
 ### Step 2
 
-AccessiMed crawls a small number of key pages, up to 5.
+AccessiMed crawls a limited number of key pages.
 
 ### Step 3
 
-Each page is analyzed for WCAG accessibility issues using browser-based automation and rule checks.
+The system runs accessibility auditing and groups issues by severity.
 
 ### Step 4
 
-The issues are grouped into `Critical`, `High`, `Medium`, and `Low`.
+The UI can show findings, fix previews, and downloadable PDF reports.
 
-### Step 5
+This is helpful for discovery, presentation, compliance review, and stakeholder sharing.
 
-The frontend dashboard shows:
+## The product mental model
 
-- total pages scanned
-- total issues found
-- severity breakdown
-- issue details
-- AI remediation previews
+The cleanest way to explain AccessiMed now is:
 
-### Step 6
-
-The team can download a PDF report for sharing or documentation.
-
-## Workflow 2: developer remediation flow
-
-This is the engineering side.
-
-### Step 1
-
-A developer runs the CLI on a local website codebase.
-
-### Step 2
-
-The CLI scans HTML files and prints numbered findings in the terminal.
-
-### Step 3
-
-The developer chooses a specific finding to fix.
-
-### Step 4
-
-AccessiMed generates a suggested HTML remediation.
-
-### Step 5
-
-The developer can apply one exact-match fix directly to a file.
-
-### Step 6
-
-The result appears as a normal file change, which means the developer can review it in Git with `git diff`.
-
-## Why the product story works
-
-AccessiMed is not only a scanner.
-
-It also provides a developer workflow:
-
-- scan
-- prioritize
-- preview a fix
-- apply a local change
-- review it in Git
-
-That is why the Snyk comparison works at the workflow level.
-
-## Simple mental model
-
-If someone asks what AccessiMed does, the simplest explanation is:
-
-“AccessiMed finds accessibility issues on healthcare websites, explains what matters most, and helps developers move those findings into reviewable code changes.”
+“AccessiMed is an open-source accessibility workflow tool. Its main job is to help developers scan local codebases, prioritize WCAG issues, and create reviewable fixes. The web app is an optional companion for live scans and reporting.”

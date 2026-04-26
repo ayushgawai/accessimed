@@ -2,64 +2,64 @@
 
 Create a polished slide-style workflow diagram for a project called **AccessiMed**.
 
-The audience is a hackathon judging panel. The diagram should be easy to understand in under 10 seconds, visually clean, modern, and enterprise-ready. Use a white or very light background, teal and slate accents, rounded but restrained containers, subtle shadows, and clear directional arrows. Avoid cartoon styling.
+The audience is open-source developers and technical adopters. The diagram should feel production-ready, clean, modern, and easy to understand quickly. Use a white or very light background, teal and slate accents, restrained rounded containers, subtle shadows, and clear directional arrows. Avoid cartoon styling.
 
-The diagram should show **two parallel workflows** that connect into one product story.
+The diagram should show **one main workflow and one optional companion workflow**.
 
-## Workflow 1: live website scan
+## Main workflow: CLI-first developer loop
 
 Show this path left to right:
 
-1. **Healthcare team enters website URL**
-2. **AccessiMed crawls up to 5 pages**
+1. **Developer installs AccessiMed**
+2. **Run `accessimed init`**
+3. **Run `accessimed doctor`**
+4. **Run `accessimed code test`**
+5. **Review severity-scored findings**
+6. **Choose remediation mode**
+7. **Apply one fix or update code manually**
+8. **Review diff in Git**
+
+Use a short label under the flow:
+
+`Local accessibility workflow for developers`
+
+## Optional companion workflow: live website scan
+
+Show this path left to right:
+
+1. **Team enters website URL**
+2. **AccessiMed crawls key pages**
 3. **Accessibility audit runs**
 4. **Issues grouped by severity**
-5. **Dashboard shows findings**
-6. **PDF report generated**
-7. **AI fix preview available**
+5. **Dashboard and PDF report available**
 
 Use a short label under the flow:
 
-`Live website discovery and compliance reporting`
-
-## Workflow 2: developer remediation workflow
-
-Show this path left to right:
-
-1. **Developer runs CLI on local codebase**
-2. **CLI prints numbered findings**
-3. **Developer selects one finding**
-4. **AccessiMed generates fix suggestion**
-5. **One file change is applied locally**
-6. **Developer reviews diff in Git**
-
-Use a short label under the flow:
-
-`Snyk-style developer workflow for accessibility remediation`
+`Optional live URL scan and reporting surface`
 
 ## Shared product center
 
-Between the two workflows, place a central AccessiMed product block with these short labels:
+Between the two workflows, place a central AccessiMed product block with these labels:
 
-- WCAG 2.1 AA focus
-- Severity scoring
-- AI remediation guidance
+- WCAG-focused scanning
+- Local deterministic mode
+- Optional OpenAI and Anthropic guidance
 - Reviewable outputs
 
 ## Visual callouts
 
 Add small side callouts for:
 
-- Healthcare websites
-- Accessibility findings
-- PDF reporting
-- Developer CLI
-- Git review workflow
+- `.accessimed.toml`
+- CLI workflow
+- Git review
+- PDF reports
+- Optional frontend and API
 
 ## Style requirements
 
-- Make the diagram feel like a product workflow, not a backend-only architecture diagram
+- Make the diagram feel like an open-source developer tool, not a hackathon poster
 - Keep text short and readable
 - Use consistent spacing and alignment
-- Make the two workflows clearly distinct but obviously part of the same product
+- Make the CLI flow visually dominant
 - Render the result as one clean presentation slide

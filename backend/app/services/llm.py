@@ -18,6 +18,31 @@ class RemediationLlmService:
         self.openai_client = AsyncOpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
 
     async def generate_fix(self, violation: dict[str, Any]) -> tuple[str, str, str, float]:
+        provider_mode = (self.settings.remediation_provider or "auto").lower()
+
+        if provider_mode == "local":
+            raise RuntimeError("Local remediation mode selected; skip LLM provider calls.")
+
+        if provider_mode == "openai":
+            if not self.openai_client:
+                raise RuntimeError("OpenAI remediation requested but no OpenAI API key is configured.")
+            for _ in range(2):
+                try:
+                    return await self._generate_with_openai(violation)
+                except Exception:
+                    await asyncio.sleep(0.4)
+            raise RuntimeError("OpenAI remediation failed.")
+
+        if provider_mode == "anthropic":
+            if not self.anthropic_client:
+                raise RuntimeError("Anthropic remediation requested but no Anthropic API key is configured.")
+            for _ in range(2):
+                try:
+                    return await self._generate_with_anthropic(violation)
+                except Exception:
+                    await asyncio.sleep(0.4)
+            raise RuntimeError("Anthropic remediation failed.")
+
         if self.openai_client:
             for _ in range(2):
                 try:

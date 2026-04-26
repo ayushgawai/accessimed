@@ -1,119 +1,342 @@
 # AccessiMed
 
-AccessiMed is a WCAG-focused accessibility platform for healthcare websites. It combines a live website scanner with a developer workflow so teams can move from findings to reviewable fixes without leaving their normal engineering process.
+AccessiMed is an open-source accessibility scanner and remediation CLI for website teams. It is designed for developers who want a local, reviewable workflow for WCAG issues, with an optional companion web app for live URL scans, dashboards, and PDF reporting.
 
-## What it does
+The CLI is the primary product surface now:
 
-AccessiMed supports two connected workflows:
+- scan local website codebases
+- score findings by severity
+- generate deterministic fixes without an LLM
+- optionally use OpenAI or Anthropic for richer remediation guidance
+- apply one fix at a time so the result shows up as a normal Git diff
 
-1. `Website scan workflow`
-   Enter a live healthcare website URL, scan up to 5 pages, group issues by severity, generate AI fix previews, and download a PDF report.
-2. `Developer workflow`
-   Run a local CLI against a website codebase, surface severity-scored issues in terminal output, and optionally apply one safe exact-match fix at a time so the result shows up as a normal Git diff.
+The frontend and FastAPI app still exist and still work. They are now best understood as companion surfaces around the same core engine.
 
-That makes the product closer to a Snyk-style workflow for accessibility than a report-only scanner.
+## Why this is useful
 
-## Current product surface
+Most accessibility tools stop at reporting. AccessiMed is built to support a developer workflow:
 
-- React/Vite frontend for scan, dashboard, and remediation preview
-- FastAPI backend for scanning, reporting, and fix generation
-- Playwright + axe-core accessibility auditing
-- Severity model: `Critical`, `High`, `Medium`, `Low`
-- OpenAI-first remediation with Anthropic fallback
-- SQLite persistence for scans, violations, and generated fixes
+1. run a scan locally
+2. review numbered findings
+3. choose a remediation mode
+4. apply a targeted fix or make the change manually
+5. inspect the result in Git
+
+That makes it much closer to a Snyk-style workflow for accessibility than a report-only scanner.
+
+## What works today
+
+### CLI-first workflow
+
+- `accessimed init` creates a project config
+- `accessimed doctor` checks setup, providers, and runtime dependencies
+- `accessimed code test` scans local static HTML codebases
+- `accessimed code fix` generates fixes and can apply one finding or multiple conservative replacements
+
+### Core scanning and remediation
+
+- browser-backed auditing with Playwright
+- WCAG-focused rule checks
+- severity model: `Critical`, `High`, `Medium`, `Low`
+- deterministic remediation fallback that works without API keys
+- optional OpenAI and Anthropic support for richer fix suggestions
+
+### Companion app surfaces
+
+- FastAPI backend for live URL scans and local-code HTTP endpoints
+- React/Vite frontend for scan input, dashboard review, fix previews, and PDF downloads
+- SQLite persistence for scans, findings, and generated fixes
 - PDF report generation
-- CLI and local-code API for developer workflow usage
 
-## Severity model
+## No-key mode
 
-| Level | Score Range | Description |
-|---|---:|---|
-| Critical | 9.0 - 10.0 | High impact, low complexity; immediate fix recommended |
-| High | 7.0 - 8.9 | Significant accessibility risk and likely user harm |
-| Medium | 4.0 - 6.9 | Important issue but narrower in scope |
-| Low | 0.0 - 3.9 | Lower impact or harder to trigger consistently |
+Yes, a meaningful part of AccessiMed works without any LLM at all.
 
-Examples in the current rule mapping:
+Without API keys, AccessiMed still does the following:
 
-- missing image alt text -> `Critical 9.4`
-- missing form labels -> `High 8.1`
-- empty buttons -> `High 7.8`
-- empty links -> `High 7.7`
-- low contrast -> `High 7.5`
-- missing `lang` attribute -> `Medium 4.8`
+- scans local HTML files
+- finds accessibility issues
+- assigns severity scores
+- generates deterministic remediation suggestions for common issues
+- applies conservative file updates for supported exact-match cases
 
-## Repository structure
+That keeps the tool usable in CI, local development, and open-source setups without burning tokens on every run.
+
+## Repository layout
 
 ```text
 AccessiMed/
-  backend/      FastAPI API, CLI, scan services, persistence, tests
-  frontend/     React/Vite product UI
-  demo-site/    intentionally inaccessible healthcare site for CLI and local remediation demos
-  docs/         demo guide, testing summary, architecture notes, diagram prompts
+  backend/      Python package, FastAPI app, CLI, tests
+  frontend/     Optional React/Vite companion app
+  demo-site/    Intentionally inaccessible sample site for examples and testing
+  docs/         Workflow notes, architecture docs, demo guides, diagram prompts
 ```
 
-## Architecture at a glance
+## Installation
 
-### Frontend
+### Requirements
 
-- `frontend/src/pages/AboutPage.jsx`
-- `frontend/src/pages/ScanPage.jsx`
-- `frontend/src/pages/DashboardPage.jsx`
-- `frontend/src/services/scanService.js`
+- Python `3.11+`
+- Git
+- Playwright Chromium for browser-backed auditing
 
-### Backend
-
-- `backend/app/api/routes.py`
-- `backend/app/services/crawler.py`
-- `backend/app/services/auditor.py`
-- `backend/app/services/scan.py`
-- `backend/app/services/fixes.py`
-- `backend/app/services/local_code.py`
-- `backend/app/services/llm.py`
-- `backend/app/cli.py`
-
-### Data
-
-- `scans`
-- `violations`
-- `fixes`
-
-## Quick start
-
-### 1. Backend setup
+### Recommended: install globally with `pipx`
 
 ```bash
-cd backend
+pipx install "git+https://github.com/ayushgawai/accessimed.git#subdirectory=backend"
+```
+
+If `pipx` is not installed yet:
+
+```bash
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+```
+
+After installation, verify:
+
+```bash
+accessimed --help
+```
+
+Then install the browser runtime once:
+
+```bash
+playwright install chromium
+```
+
+### Alternative: install with `uv tool`
+
+```bash
+uv tool install "git+https://github.com/ayushgawai/accessimed.git#subdirectory=backend"
+playwright install chromium
+```
+
+### Alternative: clone for local development
+
+```bash
+git clone https://github.com/ayushgawai/accessimed.git
+cd accessimed/backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 playwright install chromium
 ```
 
-Create the backend environment file:
+## Quick Start For A New User
+
+This is the most important workflow in this repository.
+
+Imagine you are a developer working in a completely separate website repo. You do **not** need the AccessiMed source code checked out beside your project if you installed the CLI with `pipx` or `uv tool`.
+
+### 1. Open your website project
 
 ```bash
+cd /path/to/your-website-project
+```
+
+### 2. Create the AccessiMed config
+
+```bash
+accessimed init
+```
+
+That creates `.accessimed.toml` in the current project.
+
+Default file:
+
+```toml
+[accessimed]
+root = "/absolute/path/to/your-website-project"
+remediation_provider = "local"
+
+[scanning]
+max_pages = 5
+enable_playwright = true
+
+[providers]
+# openai_model = "gpt-5"
+# anthropic_model = "claude-sonnet-4-20250514"
+```
+
+### 3. Verify local setup
+
+```bash
+accessimed doctor
+```
+
+This checks:
+
+- where the config file was loaded from
+- which root directory will be scanned
+- whether Playwright is available
+- which remediation mode is active
+- whether OpenAI or Anthropic credentials are configured
+
+### 4. Scan the codebase
+
+```bash
+accessimed code test
+```
+
+If you prefer to pass a path directly instead of relying on config:
+
+```bash
+accessimed code test /absolute/path/to/your-website-project
+```
+
+### 5. Apply one fix
+
+After reviewing the numbered findings:
+
+```bash
+accessimed code fix --finding 7 --apply
+```
+
+Or with an explicit path:
+
+```bash
+accessimed code fix /absolute/path/to/your-website-project --finding 7 --apply
+```
+
+### 6. Review the change in Git
+
+```bash
+git status
+git diff
+```
+
+That review step is intentional. AccessiMed is built to generate normal working-tree changes that fit into an existing engineering workflow.
+
+## Example: Use AccessiMed On Another Local Repo
+
+If you installed AccessiMed and want to test it against a separate local site:
+
+```bash
+cd /path/to/that-site
+accessimed init
+accessimed doctor
+accessimed code test
+accessimed code fix --finding 5 --apply --provider local
+git diff
+```
+
+This is the same flow a new user should expect in another IDE or repository.
+
+## CLI help
+
+Top-level help:
+
+```bash
+accessimed --help
+```
+
+Subcommand help:
+
+```bash
+accessimed init --help
+accessimed doctor --help
+accessimed code test --help
+accessimed code fix --help
+```
+
+## Remediation modes
+
+AccessiMed supports four remediation modes:
+
+- `local`
+  Deterministic, no-LLM mode. Best default for open source, CI, and predictable local runs.
+- `auto`
+  Try OpenAI first, then Anthropic, then fall back to deterministic behavior if generation fails elsewhere in the workflow.
+- `openai`
+  Only use OpenAI for fix generation.
+- `anthropic`
+  Only use Anthropic for fix generation.
+
+Set the mode in `.accessimed.toml`:
+
+```toml
+[accessimed]
+remediation_provider = "local"
+```
+
+Or override it for one command:
+
+```bash
+accessimed code fix . --finding 7 --apply --provider local
+accessimed code fix . --finding 7 --apply --provider auto
+```
+
+## Provider Setup
+
+If you want LLM-backed remediation, set environment variables before running the CLI or backend.
+
+Example:
+
+```bash
+export ACCESSIMED_OPENAI_API_KEY=...
+export ACCESSIMED_ANTHROPIC_API_KEY=...
+```
+
+Model overrides:
+
+```bash
+export ACCESSIMED_OPENAI_MODEL=gpt-5
+export ACCESSIMED_ANTHROPIC_MODEL=claude-sonnet-4-20250514
+```
+
+You can also use environment files when running the backend service locally, but the CLI should be documented and understood first as a tool that can be installed and run independently.
+
+## Example output
+
+```text
+AccessiMed code scan for /Users/me/clinic-site
+Findings: 11  🔴 2 Critical | 🟠 6 High | 🟡 3 Medium
+🔴 Critical 9.4  #6  Image missing alt text
+   clinic-site/index.html :: img
+🟠 High 7.7  #7  Link missing accessible name
+   clinic-site/index.html :: a
+```
+
+## Supported Local Workflow Today
+
+The strongest current fit is:
+
+- static HTML sites
+- multi-page brochure sites
+- healthcare or regulated-content websites
+- teams who want reviewable diffs instead of opaque automation
+
+The current local apply behavior is intentionally conservative:
+
+- exact-match replacements when safe
+- deterministic fallback logic for common issues
+- skips ambiguous replacements instead of making risky edits
+
+## New User Experience
+
+For an open-source user trying AccessiMed for the first time, the intended experience is:
+
+1. install the CLI once
+2. open an existing website repo in their own IDE
+3. run `accessimed init`
+4. run `accessimed doctor`
+5. run `accessimed code test`
+6. apply one targeted fix
+7. review the diff in Git
+
+That flow should work without the user needing to know anything about this repository’s internal layout.
+
+## Optional Web App And API
+
+If you want the live URL scanning surface too, keep using the existing backend and frontend.
+
+### Backend
+
+```bash
+cd backend
+source .venv/bin/activate
 cp .env.example .env
-```
-
-Supported variables:
-
-```env
-ACCESSIMED_OPENAI_API_KEY=
-ACCESSIMED_OPENAI_MODEL=gpt-5
-ACCESSIMED_ANTHROPIC_API_KEY=
-ACCESSIMED_ANTHROPIC_MODEL=claude-sonnet-4-20250514
-```
-
-Runtime behavior:
-
-- try `OpenAI` first
-- if OpenAI fails or rate-limits, fall back to `Anthropic`
-- if both are unavailable, use deterministic fallback rules
-
-Start the backend:
-
-```bash
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -121,162 +344,71 @@ Backend docs:
 
 - `http://127.0.0.1:8000/api/v1/docs`
 
-### 2. Frontend setup
+### Frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-Optional frontend env:
-
-```bash
-echo 'VITE_API_URL=http://127.0.0.1:8000' > .env.local
-```
-
-Start the frontend:
-
-```bash
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-### 3. Open the app
-
-- frontend: `http://127.0.0.1:5173`
-- backend: `http://127.0.0.1:8000`
-
-## Website scan flow
-
-1. Open `/scan`
-2. Enter a public website URL
-3. Choose `1-5` pages
-4. Start scan
-5. Review severity summary
-6. Open dashboard
-7. Generate a fix preview for a specific finding
-8. Download the PDF report
-
-The frontend is wired to these backend endpoints:
+### Main backend routes
 
 - `GET /api/v1/health`
 - `POST /api/v1/scans`
 - `GET /api/v1/scans/{scan_id}`
 - `GET /api/v1/scans/{scan_id}/report`
 - `POST /api/v1/fixes/single`
+- `POST /api/v1/fixes/bulk`
+- `POST /api/v1/local/code/scan`
+- `POST /api/v1/local/code/apply`
 
-## CLI workflow
+## Tests
 
-The CLI is the developer-facing workflow.
-
-Activate the backend venv first:
+Run the backend test suite:
 
 ```bash
 cd backend
 source .venv/bin/activate
+pytest -q
 ```
 
-### Scan a local codebase
+Current status after the latest CLI-first refactor:
 
-```bash
-accessimed code test ../demo-site
-```
+- `12 passed`
 
-What it does:
+## Docs
 
-- scans local HTML files
-- prints numbered findings in the terminal
-- groups them by severity
-- exits with status `1` when issues exist
-
-### Apply one specific fix
-
-If the scan output shows a finding like `#7`, apply only that finding:
-
-```bash
-accessimed code fix ../demo-site --finding 7 --apply
-```
-
-That writes a single file change into the working tree, which means the developer can immediately inspect it with:
-
-```bash
-git diff
-```
-
-For demos, use a fresh temp copy before applying a finding. Finding numbers can shift after a fix is applied.
-
-### Apply many exact-match fixes
-
-```bash
-accessimed code fix ../demo-site --apply
-```
-
-This is intentionally conservative:
-
-- exact-match replacements only
-- skips ambiguous replacements
-- does not pretend to rewrite arbitrary frameworks safely
-
-## Local code API workflow
-
-These endpoints support the same developer flow over HTTP:
-
-- `POST /api/v1/local/code/scan`
-- `POST /api/v1/local/code/apply`
-
-Example scan:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/local/code/scan \
-  -H 'Content-Type: application/json' \
-  -d '{"path":"/absolute/path/to/site"}'
-```
-
-Apply one finding:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/local/code/apply \
-  -H 'Content-Type: application/json' \
-  -d '{"path":"/absolute/path/to/site","finding_index":7}'
-```
-
-## Demo assets
-
-- local code demo: [demo-site/README.md](/Users/spartan/Documents/GitHub/AccessiMed/demo-site/README.md)
-- full demo script: [docs/complete-demo-guide.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/complete-demo-guide.md)
-- live demo website shortlist: [docs/live-demo-sites.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/live-demo-sites.md)
-
-## Diagram support docs
-
-- workflow explainer: [docs/accessimed-workflow.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/accessimed-workflow.md)
-- architecture explainer: [docs/technical-architecture.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/technical-architecture.md)
-- workflow diagram prompt: [docs/workflow-diagram-prompt.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/workflow-diagram-prompt.md)
-- architecture diagram prompt: [docs/system-architecture-diagram-prompt.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/system-architecture-diagram-prompt.md)
-
-## Validation
-
-Latest checked state:
-
-- backend automated tests: `9 passed`
-- frontend production build: `passed`
-- local demo-site scan: `passed`
-- single-fix generation: `passed`
-- local single-finding apply: `passed`
-- public healthcare website scan: `passed`
-
-Detailed notes:
-
+- [docs/accessimed-workflow.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/accessimed-workflow.md)
+- [docs/technical-architecture.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/technical-architecture.md)
+- [docs/complete-demo-guide.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/complete-demo-guide.md)
 - [docs/testing-summary.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/testing-summary.md)
-- [docs/demo-validation.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/demo-validation.md)
+- [docs/workflow-diagram-prompt.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/workflow-diagram-prompt.md)
+- [docs/system-architecture-diagram-prompt.md](/Users/spartan/Documents/GitHub/AccessiMed/docs/system-architecture-diagram-prompt.md)
+
+## Near-term roadmap
+
+- richer deterministic fix coverage beyond common HTML issues
+- framework-aware remediation for React and Next.js
+- IDE integration
+- CI annotations and SARIF-style output
+- optional editor extension
 
 ## Honest boundaries
 
-AccessiMed is strong for demo, prototyping, and hackathon evaluation, but it is not claiming every enterprise feature yet.
+AccessiMed is already useful, but it is not pretending to be magic.
 
-Current boundaries:
+Today it is best described as:
 
-- local code auto-apply is designed for static HTML and controlled exact-match edits
-- live public-site scanning is the strongest workflow today
-- provider-backed remediation can still be affected by external model rate limits
-- OpenAI is primary, Anthropic is the fallback path
+- production-shaped CLI ergonomics
+- strong deterministic local workflow
+- optional LLM augmentation
+- optional companion app
 
-Those boundaries are deliberate. They keep the product honest while still demonstrating a complete end-to-end workflow.
+It is not yet:
+
+- a complete codemod engine for every framework
+- a full legal compliance certification product
+- an IDE extension today
+
+That said, the current structure is a good base to open-source and grow.

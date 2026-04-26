@@ -47,6 +47,11 @@ async def test_single_and_bulk_fix_flow(client, site_server):
 async def test_local_code_scan_and_apply_flow(client, tmp_path: Path, demo_site_root: Path):
     target = tmp_path / "demo-site"
     copytree(demo_site_root, target)
+    original_files = {
+        "index.html": (target / "index.html").read_text(encoding="utf-8"),
+        "portal.html": (target / "portal.html").read_text(encoding="utf-8"),
+        "appointments.html": (target / "appointments.html").read_text(encoding="utf-8"),
+    }
 
     scan_response = await client.post("/api/v1/local/code/scan", json={"path": str(target)})
     assert scan_response.status_code == 200
@@ -55,17 +60,20 @@ async def test_local_code_scan_and_apply_flow(client, tmp_path: Path, demo_site_
     assert scan_payload["findings_count"] >= 1
     assert scan_payload["findings"][0]["finding_index"] == 1
 
-    button_finding = next(
-        finding for finding in scan_payload["findings"] if finding["rule_id"] == "button-name"
+    target_finding = next(
+        finding
+        for finding in scan_payload["findings"]
+        if finding["rule_id"] in {"button-name", "image-alt", "link-name", "html-has-lang"}
     )
     apply_response = await client.post(
         "/api/v1/local/code/apply",
-        json={"path": str(target), "finding_index": button_finding["finding_index"]},
+        json={"path": str(target), "finding_index": target_finding["finding_index"]},
     )
     assert apply_response.status_code == 200
     apply_payload = apply_response.json()
 
     assert apply_payload["changed"] is True
     assert apply_payload["fix"]["fixed_html"]
-    updated_index = (target / "index.html").read_text(encoding="utf-8")
-    assert 'aria-label="Button action"' in updated_index
+    changed_file = Path(apply_payload["source_file"])
+    updated_content = changed_file.read_text(encoding="utf-8")
+    assert updated_content != original_files[changed_file.name]

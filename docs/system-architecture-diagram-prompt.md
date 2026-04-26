@@ -2,34 +2,57 @@
 
 Create a clean enterprise-style system architecture diagram for a project named **AccessiMed**.
 
-The audience is a hackathon judging panel. The result should be presentation-ready, modern, and easy to understand quickly. Use a light background, teal and slate accents, clean arrows, subtle shadows, and readable labels. Avoid poster clutter and avoid cartoon styling.
+The audience is open-source developers and maintainers. The result should be presentation-ready, modern, and easy to understand quickly. Use a light background, teal and slate accents, clear arrows, subtle shadows, and readable labels. Avoid clutter and avoid cartoon styling.
 
 Render the output as **one polished slide-style architecture diagram**.
 
+The architecture should make one point obvious: **the installable Python package is the core, and the API/frontend are optional companion surfaces**.
+
 ## Main layers to show
 
-### 1. Frontend layer
+### 1. Package and CLI layer
 
 Label this section:
 
-`React / Vite Frontend`
+`AccessiMed Python Package`
 
-Include these UI surfaces:
+Include:
 
-- About / landing page
-- Scan page
-- Dashboard page
-- AI fix preview modal
+- `accessimed init`
+- `accessimed doctor`
+- `accessimed code test`
+- `accessimed code fix`
+- `.accessimed.toml`
 
 Optional caption:
 
-`User-facing workflow for scans, review, reports, and remediation previews`
+`Primary open-source developer workflow`
 
-### 2. Backend API layer
+### 2. Shared application services
 
 Label this section:
 
-`FastAPI Backend`
+`Shared Services`
+
+Include:
+
+- Auditor Service
+- Local Code Service
+- Fix Service
+- Reporter Service
+- Crawler Service
+- LLM Service
+- Deterministic Accessibility Helpers
+
+Show the main local path:
+
+`local codebase -> scan -> severity scoring -> fix generation -> optional file apply`
+
+### 3. Optional API layer
+
+Label this section:
+
+`FastAPI Companion API`
 
 Show these endpoints:
 
@@ -42,36 +65,20 @@ Show these endpoints:
 - `POST /api/v1/local/code/scan`
 - `POST /api/v1/local/code/apply`
 
-### 3. Service layer
+### 4. Optional frontend layer
 
 Label this section:
 
-`Application Services`
+`React / Vite Companion Frontend`
 
 Include:
 
-- Crawler Service
-- Auditor Service
-- Scan Service
-- Reporter Service
-- Fix Service
-- Local Code Service
-- LLM Service
-- CLI Entry Point
+- URL scan page
+- dashboard
+- fix preview modal
+- report download
 
-Show the main scan path:
-
-`URL input -> crawl pages -> audit pages -> persist findings -> generate PDF report`
-
-Show the fix path:
-
-`selected violation -> generate remediation -> store fix -> expose preview`
-
-Show the developer path:
-
-`local codebase -> CLI scan -> finding selection -> exact-match file apply`
-
-### 4. Persistence layer
+### 5. Persistence layer
 
 Label this section:
 
@@ -83,11 +90,9 @@ Show three tables:
 - `violations`
 - `fixes`
 
-Emphasize lineage:
+Note that the CLI local code workflow can operate without the database for basic local scans.
 
-`scan -> violations -> fixes`
-
-### 5. External integrations
+### 6. External integrations
 
 Label this section:
 
@@ -104,18 +109,17 @@ Include:
 
 Add small, tasteful callouts for:
 
-- WCAG 2.1 AA focus
-- Severity scoring model
-- OpenAI-first with Anthropic fallback
-- PDF reporting
-- Snyk-style CLI workflow for developers
-- Migration path from SQLite to PostgreSQL
+- deterministic local mode
+- optional LLM augmentation
+- reviewable Git diff workflow
+- optional live URL scans
+- future IDE and CI integrations
 
 ## Style constraints
 
 - Keep the diagram clean and not overcrowded
+- Make the package and CLI layer visually dominant
 - Use clear directional arrows
 - Prefer grouped layers over scattered icons
-- Make the frontend and CLI both visible
 - Keep text short enough to be readable on one slide
-- Make it feel like a serious technical architecture diagram, not a UI mockup
+- Make it feel like a serious technical architecture diagram, not a product landing page
