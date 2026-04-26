@@ -101,7 +101,15 @@ Supported modes:
 
 [backend/app/services/accessibility.py](/Users/spartan/Documents/GitHub/AccessiMed/backend/app/services/accessibility.py)
 
-Provides rule mapping, scoring, and deterministic fix behavior that keeps AccessiMed useful without an LLM.
+Provides rule mapping, scoring, reference URLs, and deterministic fix behavior that keeps AccessiMed useful without an LLM.
+
+This layer is important to describe correctly:
+
+- rule detection is aligned with axe/WCAG concepts
+- severity mapping is an AccessiMed product decision
+- deterministic remediation is an AccessiMed implementation choice for common HTML cases
+
+That means AccessiMed is not claiming to be the standards body. It is building a developer workflow on top of recognized accessibility rules.
 
 ## Optional API surface
 

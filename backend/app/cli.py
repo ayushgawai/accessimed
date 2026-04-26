@@ -57,6 +57,11 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser("init", help="Create a starter .accessimed.toml config file.")
     init_parser.add_argument("--path", help="Directory where the config file should be created. Defaults to the current directory.")
     init_parser.add_argument("--force", action="store_true", help="Overwrite an existing config file.")
+    init_parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Prompt for provider mode and scanning settings instead of writing the default config.",
+    )
 
     config_parser = subparsers.add_parser("config", help="Inspect the current CLI configuration.")
     config_subparsers = config_parser.add_subparsers(dest="action", required=True)
@@ -172,16 +177,47 @@ def doctor_payload(settings: Settings, config_path: Path, cli_config: CliConfig)
 
 
 def render_doctor(payload: dict[str, object]) -> None:
+    provider_mode = str(payload["remediation_provider"])
+    openai_status = "ok" if payload["openai_key_configured"] else ("optional" if provider_mode == "local" else "missing")
+    anthropic_status = "ok" if payload["anthropic_key_configured"] else ("optional" if provider_mode == "local" else "missing")
     checks = [
         ("Config file", "ok" if payload["config_exists"] else "missing", payload["config_path"]),
         ("Python", "ok", payload["python_version"]),
         ("Playwright CLI", "ok" if payload["playwright_installed"] else "missing", "playwright"),
-        ("Provider mode", "ok", payload["remediation_provider"]),
-        ("OpenAI key", "ok" if payload["openai_key_configured"] else "missing", "configured via ACCESSIMED_OPENAI_API_KEY"),
-        ("Anthropic key", "ok" if payload["anthropic_key_configured"] else "missing", "configured via ACCESSIMED_ANTHROPIC_API_KEY"),
+        (
+            "Provider mode",
+            "ok",
+            f"{provider_mode} ({'deterministic built-in fixes; API keys not required' if provider_mode == 'local' else 'LLM-backed remediation enabled'})",
+        ),
+        (
+            "OpenAI key",
+            openai_status,
+            (
+                "found in environment (currently not used in local mode)"
+                if payload["openai_key_configured"] and provider_mode == "local"
+                else "found in environment"
+                if payload["openai_key_configured"]
+                else "not configured (not used in local mode)"
+                if provider_mode == "local"
+                else "not configured"
+            ),
+        ),
+        (
+            "Anthropic key",
+            anthropic_status,
+            (
+                "found in environment (currently not used in local mode)"
+                if payload["anthropic_key_configured"] and provider_mode == "local"
+                else "found in environment"
+                if payload["anthropic_key_configured"]
+                else "not configured (not used in local mode)"
+                if provider_mode == "local"
+                else "not configured"
+            ),
+        ),
     ]
     for label, status, detail in checks:
-        prefix = "✓" if status == "ok" else "!"
+        prefix = "✓" if status == "ok" else ("-" if status == "optional" else "!")
         print(f"{prefix} {label}: {detail}")
 
 
@@ -192,13 +228,59 @@ def handle_init(args: argparse.Namespace) -> int:
     if config_path.exists() and not args.force:
         print(f"Config already exists at {config_path}. Use --force to overwrite.")
         return 2
-    config_path.write_text(render_default_config(root=target_dir), encoding="utf-8")
+    config_text = render_default_config(root=target_dir)
+    if args.interactive:
+        config_text = build_interactive_config(target_dir)
+    config_path.write_text(config_text, encoding="utf-8")
     print(f"Created {config_path}")
     print("Next steps:")
-    print("1. Set accessimed.root if your codebase lives in a different folder.")
-    print("2. Choose remediation_provider = \"local\" for deterministic fixes or \"auto\" to use configured LLM keys.")
+    print("1. Confirm accessimed.root matches the project you want to scan.")
+    print("2. Keep remediation_provider = \"local\" for deterministic fixes, or switch to \"auto\", \"openai\", or \"anthropic\" for LLM-backed remediation.")
     print("3. Run `accessimed doctor` to verify your setup.")
     return 0
+
+
+def build_interactive_config(target_dir: Path) -> str:
+    print("AccessiMed interactive setup")
+    print("Press Enter to accept the default shown in brackets.")
+
+    root_input = prompt_with_default(f"Project root [{target_dir}]: ")
+    root = Path(root_input).expanduser().resolve() if root_input else target_dir
+
+    provider_default = "local"
+    provider_input = prompt_with_default("Remediation provider [local/auto/openai/anthropic] [local]: ").lower()
+    remediation_provider = provider_input if provider_input in PROVIDER_CHOICES else provider_default
+
+    max_pages_input = prompt_with_default("Max pages for live scans [5]: ")
+    max_pages = int(max_pages_input) if max_pages_input.isdigit() and int(max_pages_input) > 0 else 5
+
+    playwright_input = prompt_with_default("Enable Playwright browser auditing? [Y/n]: ").lower()
+    enable_playwright = playwright_input not in {"n", "no"}
+
+    openai_model = None
+    anthropic_model = None
+    if remediation_provider in {"auto", "openai"}:
+        openai_model_input = prompt_with_default("OpenAI model [gpt-5]: ")
+        openai_model = openai_model_input or "gpt-5"
+    if remediation_provider in {"auto", "anthropic"}:
+        anthropic_model_input = prompt_with_default("Anthropic model [claude-sonnet-4-20250514]: ")
+        anthropic_model = anthropic_model_input or "claude-sonnet-4-20250514"
+
+    return render_default_config(
+        root=root,
+        remediation_provider=remediation_provider,
+        max_pages=max_pages,
+        enable_playwright=enable_playwright,
+        openai_model=openai_model,
+        anthropic_model=anthropic_model,
+    )
+
+
+def prompt_with_default(prompt: str) -> str:
+    try:
+        return input(prompt).strip()
+    except EOFError:
+        return ""
 
 
 def handle_config_path(config_path: Path) -> int:

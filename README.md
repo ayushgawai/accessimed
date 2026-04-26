@@ -62,6 +62,56 @@ Without API keys, AccessiMed still does the following:
 
 That keeps the tool usable in CI, local development, and open-source setups without burning tokens on every run.
 
+## Rule Provenance And Standards
+
+AccessiMed is not inventing accessibility rules from scratch.
+
+The rule model has two layers:
+
+### 1. Detection layer
+
+For browser-backed scans, AccessiMed uses:
+
+- `axe-core`
+- WCAG `2.1 A` and `2.1 AA` tags
+
+That means the underlying rule detection is based on established accessibility standards and a widely used rules engine rather than handwritten checks alone.
+
+### 2. Local deterministic workflow layer
+
+For local code scanning and local fix generation, AccessiMed currently combines:
+
+- rule IDs and rule references aligned to axe/Deque guidance
+- severity mapping maintained in AccessiMed
+- deterministic fix templates for common HTML issues
+
+Examples:
+
+- `image-alt`
+- `label`
+- `button-name`
+- `link-name`
+- `html-has-lang`
+- `color-contrast`
+
+Each rule includes:
+
+- a description
+- a help text summary
+- a reference URL
+
+Those references currently point to Deque University rule documentation and WCAG guidance.
+
+### Important boundary
+
+The deterministic remediation engine is **our implementation layer**, not an official WCAG autopatcher.
+
+So the safe claim is:
+
+- findings are grounded in established accessibility rules
+- deterministic fixes are conservative engineering suggestions for common cases
+- final review still belongs with the developer
+
 ## Repository layout
 
 ```text
@@ -286,6 +336,38 @@ export ACCESSIMED_ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```
 
 You can also use environment files when running the backend service locally, but the CLI should be documented and understood first as a tool that can be installed and run independently.
+
+## Why The CLI Does Not Prompt For API Keys
+
+AccessiMed is intentionally non-interactive during normal execution.
+
+It reads configuration from:
+
+1. `.accessimed.toml`
+2. environment variables
+3. command-line flags
+
+That makes it easier to use in:
+
+- local development
+- CI jobs
+- editor tasks
+- future IDE integrations
+
+If you want a guided setup experience, use:
+
+```bash
+accessimed init --interactive
+```
+
+That setup flow can ask which remediation mode you want:
+
+- `local`
+- `auto`
+- `openai`
+- `anthropic`
+
+and then write the config file for you.
 
 ## Example output
 
